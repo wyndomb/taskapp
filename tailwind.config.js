@@ -9,6 +9,7 @@ module.exports = {
     extend: {
       colors: {
         primary: "#4F46E5", // Indigo
+        "primary-dark": "#3730A3", // Darker Indigo
         secondary: "#10B981", // Emerald
         background: "#F9FAFB", // Light gray
         completed: "#D1FAE5", // Light green

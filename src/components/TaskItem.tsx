@@ -1,13 +1,14 @@
 "use client";
 
 import { TaskItemProps } from "@/lib/types";
-import { format } from "date-fns";
+import { format, isSameDay, parseISO } from "date-fns";
 
 const TaskItem: React.FC<TaskItemProps> = ({
   task,
   onToggleCompletion,
   onDeleteTask,
   isCompleted = false,
+  currentDate,
 }) => {
   // Format the deadline if it exists
   const formattedDeadline = task.deadline
@@ -18,6 +19,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const formattedCompletionDate = task.completedAt
     ? format(new Date(task.completedAt), "MMM d, yyyy h:mm a")
     : null;
+
+  // Check if the deadline is on the current day
+  const isDeadlineToday =
+    task.deadline && currentDate
+      ? isSameDay(new Date(task.deadline), parseISO(currentDate))
+      : false;
 
   return (
     <div
@@ -57,8 +64,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
             {task.title}
           </h3>
 
-          {/* Show deadline for active tasks */}
-          {!task.completed && formattedDeadline && (
+          {/* Show deadline for active tasks, but only if not on the current day */}
+          {!task.completed && formattedDeadline && !isDeadlineToday && (
             <div className="mt-1 text-sm text-gray-600 flex items-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"

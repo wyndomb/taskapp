@@ -2,28 +2,49 @@
 
 import { useState } from "react";
 import { TaskFormProps } from "@/lib/types";
+import { format, parseISO, setHours, setMinutes, setSeconds } from "date-fns";
 
-const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ onAddTask, selectedDate }) => {
   const [title, setTitle] = useState("");
-  const [deadline, setDeadline] = useState("");
+  const [deadlineDate, setDeadlineDate] = useState("");
+  const [deadlineTime, setDeadlineTime] = useState("");
   const [showDeadline, setShowDeadline] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (title.trim()) {
-      onAddTask(title.trim(), deadline ? new Date(deadline) : undefined);
+      let finalDeadline;
+
+      if (deadlineDate) {
+        // Create a date object from the deadline date
+        const dateObj = new Date(deadlineDate);
+
+        // If time is provided, set it; otherwise, set to end of day (23:59:59)
+        if (deadlineTime) {
+          const [hours, minutes] = deadlineTime.split(":").map(Number);
+          finalDeadline = setHours(setMinutes(dateObj, minutes), hours);
+        } else {
+          finalDeadline = setHours(setMinutes(setSeconds(dateObj, 59), 59), 23);
+        }
+      }
+
+      onAddTask(title.trim(), selectedDate, finalDeadline);
 
       // Reset form
       setTitle("");
-      setDeadline("");
+      setDeadlineDate("");
+      setDeadlineTime("");
       setShowDeadline(false);
     }
   };
 
+  // Format the selected date for display
+  const formattedDate = format(parseISO(selectedDate), "EEEE, MMMM d");
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4 text-primary">Add New Task</h2>
+    <div>
+      <p className="text-sm text-gray-600 mb-4">for {formattedDate}</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -34,6 +55,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
             placeholder="What needs to be done?"
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             required
+            autoFocus
           />
         </div>
 
@@ -62,18 +84,39 @@ const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
         </div>
 
         {showDeadline && (
-          <div>
-            <input
-              type="datetime-local"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Deadline Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={deadlineDate}
+                onChange={(e) => setDeadlineDate(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Time (optional)
+              </label>
+              <input
+                type="time"
+                value={deadlineTime}
+                onChange={(e) => setDeadlineTime(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                If no time is selected, deadline will be set to end of day
+                (11:59 PM)
+              </p>
+            </div>
           </div>
         )}
 
         <div>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary w-full">
             Add Task
           </button>
         </div>

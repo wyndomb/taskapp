@@ -61,6 +61,44 @@ yarn dev
 3. Completed tasks remain visible in a "completed" section
 4. App displays a running count of completed tasks per day
 
+## Deployment
+
+### Deploying to Vercel
+
+This app is optimized for deployment on Vercel:
+
+1. Push your code to a GitHub repository
+2. Visit [Vercel](https://vercel.com) and sign in with GitHub
+3. Click "New Project" and import your repository
+4. Keep the default settings and click "Deploy"
+5. Your app will be deployed and available at a Vercel URL
+
+### Build for Production
+
+To build the app for production locally:
+
+```bash
+npm run build
+# or
+yarn build
+```
+
+To start the production server locally:
+
+```bash
+npm run start
+# or
+yarn start
+```
+
+## Data Persistence
+
+Currently, the app uses browser localStorage for data persistence. This means:
+
+- Tasks are stored in the user's browser
+- Tasks will persist between sessions on the same device
+- Tasks will not sync between different devices
+
 ## License
 
 ISC

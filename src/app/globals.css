@@ -5,6 +5,8 @@
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-rgb: 249, 250, 251;
+  --primary-color: 79, 70, 229; /* Indigo */
+  --secondary-color: 16, 185, 129; /* Emerald */
 }
 
 body {
@@ -33,4 +35,48 @@ body {
   .task-completed {
     @apply bg-completed border-green-200;
   }
+
+  .fab {
+    @apply fixed bottom-8 right-8 w-16 h-16 rounded-full bg-primary text-white shadow-xl 
+    flex items-center justify-center hover:bg-primary/80 transition-colors z-10
+    hover:scale-110 transform transition-transform duration-200;
+    box-shadow: 0 4px 12px rgba(var(--primary-color), 0.5);
+  }
+
+  .task-lists-container {
+    @apply min-h-[60vh] flex flex-col;
+  }
+
+  /* Empty state styling */
+  .empty-state {
+    @apply flex flex-col items-center justify-center p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300;
+    min-height: 150px;
+  }
+}
+
+/* Make the active tasks list take up more space */
+.task-list-active {
+  flex-grow: 1;
+  min-height: 30vh;
+}
+
+/* Make the completed tasks list take up less space when empty */
+.task-list-completed:empty {
+  flex-grow: 0;
+}
+
+/* Add some animation for completed tasks */
+.task-completed {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Improve the stats cards */
+.stats-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }

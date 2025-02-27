@@ -1,58 +1,86 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import TaskForm from "@/components/TaskForm";
-import TaskList from "@/components/TaskList";
-import Stats from "@/components/Stats";
 import { Task } from "@/lib/types";
 import { format } from "date-fns";
+import Navigation from "@/components/Navigation";
+import DayDetail from "@/components/DayDetail";
+import Calendar from "@/components/Calendar";
+
+// TODO: Future optimizations:
+// 1. Consider using a more persistent storage solution like IndexedDB for larger datasets
+// 2. Implement pagination or virtualization if task lists grow very large
+// 3. Add service worker for offline support
+// 4. Consider server components for parts that don't need client interactivity
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    // Load tasks from localStorage on client side
-    if (typeof window !== "undefined") {
-      const savedTasks = localStorage.getItem("tasks");
-      return savedTasks ? JSON.parse(savedTasks) : [];
-    }
-    return [];
-  });
+  // State for current view (day or calendar)
+  const [currentView, setCurrentView] = useState<"day" | "calendar">("day");
 
-  const [stats, setStats] = useState({
-    completedToday: 0,
-    totalCompleted: 0,
-    totalActive: 0,
-  });
+  // State for selected date and month
+  const [selectedDate, setSelectedDate] = useState<string>(
+    format(new Date(), "yyyy-MM-dd")
+  );
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+
+  // State for tasks
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // State to track if component has mounted
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load tasks from localStorage only after component mounts on client
+  useEffect(() => {
+    try {
+      // Load tasks from localStorage on client side
+      const savedTasks = localStorage.getItem("tasks");
+      if (savedTasks) {
+        const parsedTasks = JSON.parse(savedTasks);
+
+        // Add date field to existing tasks if it doesn't exist
+        setTasks(
+          parsedTasks.map((task: any) => ({
+            ...task,
+            date: task.date || format(new Date(task.createdAt), "yyyy-MM-dd"),
+            // Ensure dates are properly parsed
+            createdAt: new Date(task.createdAt),
+            completedAt: task.completedAt
+              ? new Date(task.completedAt)
+              : undefined,
+            deadline: task.deadline ? new Date(task.deadline) : undefined,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error loading tasks from localStorage:", error);
+      // If there's an error, start with an empty array
+      setTasks([]);
+    } finally {
+      // Always set isLoaded to true, even if there was an error
+      setIsLoaded(true);
+    }
+  }, []);
 
   // Save tasks to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-    updateStats();
-  }, [tasks]);
-
-  // Update statistics
-  const updateStats = () => {
-    const today = format(new Date(), "yyyy-MM-dd");
-
-    const completedToday = tasks.filter(
-      (task) =>
-        task.completed &&
-        format(new Date(task.completedAt || ""), "yyyy-MM-dd") === today
-    ).length;
-
-    const totalCompleted = tasks.filter((task) => task.completed).length;
-    const totalActive = tasks.filter((task) => !task.completed).length;
-
-    setStats({ completedToday, totalCompleted, totalActive });
-  };
+    if (isLoaded) {
+      try {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+      } catch (error) {
+        console.error("Error saving tasks to localStorage:", error);
+      }
+    }
+  }, [tasks, isLoaded]);
 
   // Add a new task
-  const addTask = (title: string, deadline?: Date) => {
+  const addTask = (title: string, date: string, deadline?: Date) => {
     const newTask: Task = {
       id: Date.now().toString(),
       title,
       completed: false,
       createdAt: new Date(),
-      deadline: deadline,
+      date,
+      deadline,
     };
     setTasks([...tasks, newTask]);
   };
@@ -78,9 +106,52 @@ export default function Home() {
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
-  // Get active and completed tasks
-  const activeTasks = tasks.filter((task) => !task.completed);
-  const completedTasks = tasks.filter((task) => task.completed);
+  // Handle date change in day view
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+  };
+
+  // Handle month change in calendar view
+  const handleMonthChange = (month: Date) => {
+    setSelectedMonth(month);
+  };
+
+  // Handle day click in calendar view
+  const handleDayClick = (date: string) => {
+    setSelectedDate(date);
+    setCurrentView("day");
+  };
+
+  // Handle view change
+  const handleViewChange = (view: "day" | "calendar") => {
+    setCurrentView(view);
+  };
+
+  // Create a sample task if there are no tasks and the app is loaded
+  useEffect(() => {
+    if (isLoaded && tasks.length === 0) {
+      const today = format(new Date(), "yyyy-MM-dd");
+      addTask(
+        "Welcome to Joytask! Click the + button to add your first task",
+        today
+      );
+    }
+  }, [isLoaded, tasks.length]);
+
+  // Loading state
+  if (!isLoaded) {
+    return (
+      <div className="space-y-8">
+        <header className="text-center">
+          <h1 className="text-4xl font-bold text-primary mb-2">Joytask</h1>
+          <p className="text-gray-600">Celebrate your accomplishments</p>
+        </header>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -89,34 +160,25 @@ export default function Home() {
         <p className="text-gray-600">Celebrate your accomplishments</p>
       </header>
 
-      <Stats stats={stats} />
+      <Navigation currentView={currentView} onViewChange={handleViewChange} />
 
-      <TaskForm onAddTask={addTask} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-4 text-primary">
-            Active Tasks
-          </h2>
-          <TaskList
-            tasks={activeTasks}
-            onToggleCompletion={toggleTaskCompletion}
-            onDeleteTask={deleteTask}
-          />
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-4 text-secondary">
-            Completed Tasks
-          </h2>
-          <TaskList
-            tasks={completedTasks}
-            onToggleCompletion={toggleTaskCompletion}
-            onDeleteTask={deleteTask}
-            isCompletedList={true}
-          />
-        </div>
-      </div>
+      {currentView === "day" ? (
+        <DayDetail
+          date={selectedDate}
+          tasks={tasks}
+          onDateChange={handleDateChange}
+          onAddTask={addTask}
+          onToggleCompletion={toggleTaskCompletion}
+          onDeleteTask={deleteTask}
+        />
+      ) : (
+        <Calendar
+          tasks={tasks}
+          selectedMonth={selectedMonth}
+          onMonthChange={handleMonthChange}
+          onDayClick={handleDayClick}
+        />
+      )}
     </div>
   );
 }

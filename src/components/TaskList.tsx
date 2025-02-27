@@ -8,15 +8,54 @@ const TaskList: React.FC<TaskListProps> = ({
   onToggleCompletion,
   onDeleteTask,
   isCompletedList = false,
+  currentDate,
 }) => {
   if (tasks.length === 0) {
     return (
-      <div className="text-center p-6 bg-white rounded-lg shadow-sm border border-gray-200">
-        <p className="text-gray-500">
-          {isCompletedList
-            ? "No completed tasks yet. Complete a task to see it here!"
-            : "No active tasks. Add a new task to get started!"}
-        </p>
+      <div className="empty-state">
+        {isCompletedList ? (
+          <>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-12 w-12 text-gray-400 mb-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p className="text-gray-500 mb-1">No completed tasks yet</p>
+            <p className="text-sm text-gray-400">
+              Complete a task to see it here!
+            </p>
+          </>
+        ) : (
+          <>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-12 w-12 text-gray-400 mb-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            <p className="text-gray-500 mb-1">No active tasks</p>
+            <p className="text-sm text-gray-400">
+              Click the + button to add a new task
+            </p>
+          </>
+        )}
       </div>
     );
   }
@@ -30,6 +69,7 @@ const TaskList: React.FC<TaskListProps> = ({
           onToggleCompletion={onToggleCompletion}
           onDeleteTask={onDeleteTask}
           isCompleted={isCompletedList}
+          currentDate={currentDate}
         />
       ))}
     </div>
