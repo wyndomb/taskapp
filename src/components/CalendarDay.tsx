@@ -29,14 +29,14 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   }
 
   // Limit the number of tasks to display
-  const displayLimit = 2;
+  const displayLimit = 1;
   const displayTasks = tasks.slice(0, displayLimit);
   const hasMoreTasks = totalTasks > displayLimit;
 
   return (
     <div
       onClick={onClick}
-      className={`${bgColor} p-2 min-h-[100px] ${
+      className={`${bgColor} p-2 min-h-[80px] ${
         isCurrentMonth ? "text-gray-800" : "text-gray-400"
       } ${
         isToday ? "ring-2 ring-primary" : ""
@@ -73,7 +73,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
         ))}
 
         {hasMoreTasks && (
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 font-medium">
             +{totalTasks - displayLimit} more
           </div>
         )}

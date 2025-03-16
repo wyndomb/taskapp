@@ -6,6 +6,23 @@ export interface Task {
   completedAt?: Date;
   deadline?: Date;
   date: string; // The date this task is associated with (YYYY-MM-DD format)
+  user_id?: string; // The ID of the user who owns this task
+}
+
+export interface User {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+}
+
+export interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 export interface StatsProps {

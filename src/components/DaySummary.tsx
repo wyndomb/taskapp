@@ -17,7 +17,7 @@ const DaySummary: React.FC<DaySummaryProps> = ({
   const pendingTasks = totalTasks - completedTasks;
 
   return (
-    <div className="p-6">
+    <div className="p-4 pt-0">
       <h3 className="text-xl font-semibold mb-4">{formattedDate}</h3>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -43,26 +43,28 @@ const DaySummary: React.FC<DaySummaryProps> = ({
         {tasks.length === 0 ? (
           <p className="text-gray-500 text-sm">No tasks for this day.</p>
         ) : (
-          <ul className="space-y-2">
-            {tasks.map((task) => (
-              <li key={task.id} className="flex items-center gap-2 text-sm">
-                <span
-                  className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                    task.completed ? "bg-green-500" : "bg-yellow-500"
-                  }`}
-                ></span>
-                <span
-                  className={`${
-                    task.completed
-                      ? "line-through text-gray-500"
-                      : "text-gray-700"
-                  }`}
-                >
-                  {task.title}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="max-h-60 overflow-y-auto pr-2">
+            <ul className="space-y-2">
+              {tasks.map((task) => (
+                <li key={task.id} className="flex items-center gap-2 text-sm">
+                  <span
+                    className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                      task.completed ? "bg-green-500" : "bg-yellow-500"
+                    }`}
+                  ></span>
+                  <span
+                    className={`${
+                      task.completed
+                        ? "line-through text-gray-500"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {task.title}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 

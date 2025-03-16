@@ -15,21 +15,39 @@ const TaskForm: React.FC<TaskFormProps> = ({ onAddTask, selectedDate }) => {
 
     if (title.trim()) {
       let finalDeadline;
+      let taskDate = selectedDate; // Default to the selected date
 
       if (deadlineDate) {
-        // Create a date object from the deadline date
-        const dateObj = new Date(deadlineDate);
+        try {
+          // Create a date object from the deadline date
+          const dateObj = new Date(deadlineDate);
 
-        // If time is provided, set it; otherwise, set to end of day (23:59:59)
-        if (deadlineTime) {
-          const [hours, minutes] = deadlineTime.split(":").map(Number);
-          finalDeadline = setHours(setMinutes(dateObj, minutes), hours);
-        } else {
-          finalDeadline = setHours(setMinutes(setSeconds(dateObj, 59), 59), 23);
+          // If time is provided, set it; otherwise, set to end of day (23:59:59)
+          if (deadlineTime) {
+            const [hours, minutes] = deadlineTime.split(":").map(Number);
+            finalDeadline = setHours(setMinutes(dateObj, minutes), hours);
+          } else {
+            finalDeadline = setHours(
+              setMinutes(setSeconds(dateObj, 59), 59),
+              23
+            );
+          }
+
+          // Ensure the date is valid
+          if (isNaN(finalDeadline.getTime())) {
+            console.error("Invalid date created:", finalDeadline);
+            finalDeadline = undefined;
+          } else {
+            // Use the deadline date as the task date (YYYY-MM-DD format)
+            taskDate = format(finalDeadline, "yyyy-MM-dd");
+          }
+        } catch (error) {
+          console.error("Error creating deadline date:", error);
+          finalDeadline = undefined;
         }
       }
 
-      onAddTask(title.trim(), selectedDate, finalDeadline);
+      onAddTask(title.trim(), taskDate, finalDeadline);
 
       // Reset form
       setTitle("");

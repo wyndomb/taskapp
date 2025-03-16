@@ -11,20 +11,44 @@ const TaskItem: React.FC<TaskItemProps> = ({
   currentDate,
 }) => {
   // Format the deadline if it exists
-  const formattedDeadline = task.deadline
-    ? format(new Date(task.deadline), "MMM d, yyyy h:mm a")
-    : null;
+  let formattedDeadline = null;
+  if (task.deadline) {
+    try {
+      formattedDeadline = format(new Date(task.deadline), "MMM d, yyyy h:mm a");
+    } catch (error) {
+      console.error("Error formatting deadline:", error, task.deadline);
+    }
+  }
 
   // Format the completion date if it exists
-  const formattedCompletionDate = task.completedAt
-    ? format(new Date(task.completedAt), "MMM d, yyyy h:mm a")
-    : null;
+  let formattedCompletionDate = null;
+  if (task.completedAt) {
+    try {
+      formattedCompletionDate = format(
+        new Date(task.completedAt),
+        "MMM d, yyyy h:mm a"
+      );
+    } catch (error) {
+      console.error(
+        "Error formatting completion date:",
+        error,
+        task.completedAt
+      );
+    }
+  }
 
   // Check if the deadline is on the current day
-  const isDeadlineToday =
-    task.deadline && currentDate
-      ? isSameDay(new Date(task.deadline), parseISO(currentDate))
-      : false;
+  let isDeadlineToday = false;
+  if (task.deadline && currentDate) {
+    try {
+      isDeadlineToday = isSameDay(
+        new Date(task.deadline),
+        parseISO(currentDate)
+      );
+    } catch (error) {
+      console.error("Error checking if deadline is today:", error);
+    }
+  }
 
   return (
     <div

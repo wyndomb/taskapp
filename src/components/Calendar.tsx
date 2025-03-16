@@ -91,14 +91,20 @@ const Calendar: React.FC<CalendarProps> = ({
   const getTasksForDay = (date: Date): Task[] => {
     const dateString = format(date, "yyyy-MM-dd");
 
-    // Include tasks that were created on this date OR have a deadline on this date
+    // Only include tasks that have a deadline on this date
     return tasks.filter((task) => {
-      const taskDate = task.date;
-      const taskDeadline = task.deadline
-        ? format(new Date(task.deadline), "yyyy-MM-dd")
-        : null;
+      if (task.deadline) {
+        // If the task has a deadline, check if it falls on this date
+        try {
+          return isSameDay(new Date(task.deadline), date);
+        } catch (error) {
+          console.error("Error comparing dates:", error);
+          return false;
+        }
+      }
 
-      return taskDate === dateString || taskDeadline === dateString;
+      // For backward compatibility, include tasks without deadlines that were created on this date
+      return task.date === dateString;
     });
   };
 
@@ -193,29 +199,52 @@ const Calendar: React.FC<CalendarProps> = ({
 
       {/* Day summary modal */}
       {selectedDate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
-            <DaySummary
-              date={selectedDate}
-              tasks={tasks.filter((task) => {
-                const taskDate = task.date;
-                const taskDeadline = task.deadline
-                  ? format(new Date(task.deadline), "yyyy-MM-dd")
-                  : null;
-
-                return (
-                  taskDate === selectedDate || taskDeadline === selectedDate
-                );
-              })}
-              onViewDetails={viewDayDetails}
-            />
-            <div className="p-4 bg-gray-50 flex justify-end">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto my-8 flex flex-col max-h-[90vh]">
+            <div className="sticky top-0 bg-white z-10 flex justify-end p-2">
               <button
                 onClick={closeDaySummary}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="text-gray-500 hover:text-gray-700 p-1"
+                aria-label="Close"
               >
-                Close
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
               </button>
+            </div>
+            <div className="overflow-y-auto flex-grow">
+              <DaySummary
+                date={selectedDate}
+                tasks={tasks.filter((task) => {
+                  if (task.deadline) {
+                    // If the task has a deadline, check if it falls on this date
+                    try {
+                      return isSameDay(
+                        new Date(task.deadline),
+                        parseISO(selectedDate)
+                      );
+                    } catch (error) {
+                      console.error("Error comparing dates:", error);
+                      return false;
+                    }
+                  }
+
+                  // For backward compatibility, include tasks without deadlines that were created on this date
+                  return task.date === selectedDate;
+                })}
+                onViewDetails={viewDayDetails}
+              />
             </div>
           </div>
         </div>

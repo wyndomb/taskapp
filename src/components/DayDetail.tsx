@@ -25,29 +25,39 @@ const DayDetail: React.FC<DayDetailComponentProps> = ({
   const [showTaskForm, setShowTaskForm] = useState(false);
 
   // Filter tasks for the selected date
-  // Include tasks that were created on this date OR have a deadline on this date
   const dayTasks = tasks.filter((task) => {
-    const taskDate = task.date;
-
-    // If the task has a deadline, it should only appear on that specific date
+    // If the task has a deadline, check if it falls on the selected date
     if (task.deadline) {
-      const taskDeadline = format(new Date(task.deadline), "yyyy-MM-dd");
-      return taskDeadline === date;
+      try {
+        const deadlineDate = new Date(task.deadline);
+        const selectedDate = parseISO(date);
+        return isSameDay(deadlineDate, selectedDate);
+      } catch (error) {
+        console.error("Error comparing dates:", error);
+        return false;
+      }
     }
 
-    // If no deadline, show on the date it was created for
-    return taskDate === date;
+    // If no deadline is set, use the task's date field (for backward compatibility)
+    // This ensures existing tasks without deadlines still show up somewhere
+    return task.date === date;
   });
 
   // Calculate stats for the day
   const dayStats = {
-    completedToday: tasks.filter(
-      (task) =>
-        task.completed &&
-        task.completedAt &&
-        format(new Date(task.completedAt), "yyyy-MM-dd") === date
-    ).length,
-    totalCompleted: tasks.filter((task) => task.completed).length,
+    completedToday: dayTasks.filter((task) => {
+      if (!task.completed || !task.completedAt) return false;
+
+      try {
+        const completedDate = new Date(task.completedAt);
+        const selectedDate = parseISO(date);
+        return isSameDay(completedDate, selectedDate);
+      } catch (error) {
+        console.error("Error comparing completion dates:", error);
+        return false;
+      }
+    }).length,
+    totalCompleted: dayTasks.filter((task) => task.completed).length,
     totalActive: dayTasks.filter((task) => !task.completed).length,
   };
 
