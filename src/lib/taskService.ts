@@ -1,6 +1,5 @@
 import { supabase } from "./supabase";
 import { Task } from "./types";
-import { format } from "date-fns";
 
 // Get all tasks for a user
 export const getTasks = async (userId: string): Promise<Task[]> => {

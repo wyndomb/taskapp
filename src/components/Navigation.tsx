@@ -1,7 +1,6 @@
 "use client";
 
 import { NavigationProps } from "@/lib/types";
-import Link from "next/link";
 import LoginButton from "./auth/LoginButton";
 import UserProfile from "./auth/UserProfile";
 import { useAuth } from "@/context/AuthContext";

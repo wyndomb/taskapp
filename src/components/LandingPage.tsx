@@ -1,6 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
 import LoginButton from "./auth/LoginButton";
-import { Button } from "./ui/button";
 import { CheckCircle } from "./ui/CheckCircle";
 
 export default function WelcomeScreen() {

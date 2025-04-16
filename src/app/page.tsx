@@ -7,7 +7,6 @@ import Navigation from "@/components/Navigation";
 import DayDetail from "@/components/DayDetail";
 import Calendar from "@/components/Calendar";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
 import {
   getTasks,
   addTask as addTaskToDb,
@@ -20,6 +19,18 @@ import { CheckCircle } from "@/components/ui/CheckCircle";
 import { Circle } from "@/components/ui/Circle";
 import LandingPage from "@/components/LandingPage";
 import { useToast } from "@/context/ToastContext";
+
+// Define a type for raw task data from localStorage
+interface RawTaskData {
+  id: string;
+  userId?: string;
+  title: string;
+  completed: boolean;
+  createdAt: string; // Expect string initially
+  completedAt?: string; // Expect string initially
+  deadline?: string; // Expect string initially
+  date?: string; // Expect string initially
+}
 
 // TODO: Future optimizations:
 // 1. Consider using a more persistent storage solution like IndexedDB for larger datasets
@@ -94,16 +105,21 @@ export default function Home() {
               const localTasksJson = localStorage.getItem("tasks");
               if (localTasksJson) {
                 const localTasks = JSON.parse(localTasksJson);
-                const formattedLocalTasks = localTasks.map((task: any) => ({
-                  ...task,
-                  date:
-                    task.date || format(new Date(task.createdAt), "yyyy-MM-dd"),
-                  createdAt: new Date(task.createdAt),
-                  completedAt: task.completedAt
-                    ? new Date(task.completedAt)
-                    : undefined,
-                  deadline: task.deadline ? new Date(task.deadline) : undefined,
-                }));
+                const formattedLocalTasks = localTasks.map(
+                  (task: RawTaskData) => ({
+                    ...task,
+                    date:
+                      task.date ||
+                      format(new Date(task.createdAt), "yyyy-MM-dd"),
+                    createdAt: new Date(task.createdAt),
+                    completedAt: task.completedAt
+                      ? new Date(task.completedAt)
+                      : undefined,
+                    deadline: task.deadline
+                      ? new Date(task.deadline)
+                      : undefined,
+                  })
+                );
 
                 const migrationSuccess = await migrateLocalTasks(
                   user.id,
@@ -142,7 +158,7 @@ export default function Home() {
             if (savedTasks) {
               const parsedTasks = JSON.parse(savedTasks);
               setTasks(
-                parsedTasks.map((task: any) => ({
+                parsedTasks.map((task: RawTaskData) => ({
                   ...task,
                   date:
                     task.date || format(new Date(task.createdAt), "yyyy-MM-dd"),
@@ -173,7 +189,7 @@ export default function Home() {
     if (!isAuthLoading) {
       loadTasks();
     }
-  }, [user, isAuthLoading, hasMigratedTasks]);
+  }, [user, isAuthLoading, hasMigratedTasks, showToast]);
 
   // Save tasks to localStorage when they change (only if not logged in)
   useEffect(() => {
@@ -182,9 +198,11 @@ export default function Home() {
         localStorage.setItem("tasks", JSON.stringify(tasks));
       } catch (error) {
         console.error("Error saving tasks to localStorage:", error);
+        // Optionally show a toast message here if saving fails
+        // showToast("Failed to save tasks locally.", "error"); // Uncomment if needed
       }
     }
-  }, [tasks, isLoaded, user]);
+  }, [tasks, isLoaded, user, showToast]);
 
   // Add a new task
   const addTask = async (title: string, date: string, deadline?: Date) => {

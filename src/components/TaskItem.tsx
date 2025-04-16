@@ -12,7 +12,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
   task,
   onToggleCompletion,
   onDeleteTask,
-  isCompleted = false,
 }) => {
   const [showCelebration, setShowCelebration] = useState(false);
   const { showToast } = useToast();

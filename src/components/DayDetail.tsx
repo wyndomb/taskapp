@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Task } from "@/lib/types";
 import TaskForm from "./TaskForm";
 import TaskList from "./TaskList";
-import { format, addDays, subDays, parseISO, isSameDay } from "date-fns";
+import { format, addDays, subDays, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 

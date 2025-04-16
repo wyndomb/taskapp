@@ -1,8 +1,6 @@
 import React from "react";
 
-interface CheckCircleProps extends React.SVGProps<SVGSVGElement> {}
-
-export const CheckCircle: React.FC<CheckCircleProps> = (props) => {
+export const CheckCircle: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

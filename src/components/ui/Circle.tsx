@@ -1,8 +1,10 @@
 import React from "react";
 
-interface CircleProps extends React.SVGProps<SVGSVGElement> {}
+// Remove empty extending interface
+// interface CircleProps extends React.SVGProps<SVGSVGElement> {}
 
-export const Circle: React.FC<CircleProps> = (props) => {
+// Use the base SVGProps type directly
+export const Circle: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

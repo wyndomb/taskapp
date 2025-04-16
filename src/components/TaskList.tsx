@@ -7,7 +7,6 @@ const TaskList: React.FC<TaskListProps> = ({
   tasks,
   onToggleCompletion,
   onDeleteTask,
-  isCompletedList = false,
   currentDate,
 }) => {
   return (

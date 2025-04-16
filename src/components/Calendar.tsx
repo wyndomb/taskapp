@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarProps, Task, DayStats } from "@/lib/types";
+import { CalendarProps, Task } from "@/lib/types";
 import {
   format,
   startOfMonth,

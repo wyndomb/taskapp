@@ -1,8 +1,10 @@
 import React from "react";
 
-interface BarChartProps extends React.SVGProps<SVGSVGElement> {}
+// Remove empty extending interface
+// interface BarChartProps extends React.SVGProps<SVGSVGElement> {}
 
-export const BarChart: React.FC<BarChartProps> = (props) => {
+// Use the base SVGProps type directly
+export const BarChart: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
