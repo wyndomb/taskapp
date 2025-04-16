@@ -33,7 +33,7 @@ export default function UserProfile() {
           {name.charAt(0).toUpperCase()}
         </div>
       )}
-      <span className="text-sm font-medium">{name}</span>
+      <span className="hidden sm:inline text-sm font-medium">{name}</span>
     </div>
   );
 }

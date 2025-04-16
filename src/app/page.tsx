@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import DayDetail from "@/components/DayDetail";
 import Calendar from "@/components/Calendar";
 import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
 import {
   getTasks,
   addTask as addTaskToDb,
@@ -14,13 +15,16 @@ import {
   deleteTask as deleteTaskFromDb,
   migrateLocalTasks,
 } from "@/lib/taskService";
-import WelcomeScreen from "@/components/WelcomeScreen";
+import { BarChart } from "@/components/ui/BarChart";
+import { CheckCircle } from "@/components/ui/CheckCircle";
+import { Circle } from "@/components/ui/Circle";
+import LandingPage from "@/components/LandingPage";
+import { useToast } from "@/context/ToastContext";
 
 // TODO: Future optimizations:
 // 1. Consider using a more persistent storage solution like IndexedDB for larger datasets
 // 2. Implement pagination or virtualization if task lists grow very large
 // 3. Add service worker for offline support
-// 4. Consider server components for parts that don't need client interactivity
 
 export default function Home() {
   // State for current view (day or calendar)
@@ -41,11 +45,9 @@ export default function Home() {
   // State to track if local tasks have been migrated
   const [hasMigratedTasks, setHasMigratedTasks] = useState(false);
 
-  // Track when the component was loaded
-  const [loadTime] = useState(Date.now());
-
   // Get auth context
   const { user, isLoading: isAuthLoading } = useAuth();
+  const { showToast } = useToast();
 
   // Initialize migration flag from localStorage
   useEffect(() => {
@@ -73,7 +75,6 @@ export default function Home() {
           localStorage.setItem("last_login_user_id", user.id);
 
           // Only clear tasks if this is a new user who has tasks that might belong to a deleted account
-          // We'll check if the user has the migrated flag - if they don't, they might be a new user
           const migrationFlag = localStorage.getItem(`migrated_${user.id}`);
           const isNewUser = migrationFlag !== "true";
 
@@ -81,80 +82,57 @@ export default function Home() {
             console.log(
               "Detected new user login with existing tasks. Clearing tasks for clean slate."
             );
-            // Delete all existing tasks for this user
-            for (const task of userTasks) {
-              try {
-                await deleteTaskFromDb(task.id);
-              } catch (error) {
-                console.error("Error deleting existing task:", error);
-              }
-            }
-            // Set empty tasks array
-            setTasks([]);
-            return; // Exit early to avoid setting tasks with the existing data
+            // Risky deletion logic removed as per code review plan
+            // The check is kept for debugging purposes only
           }
 
           setTasks(userTasks);
 
-          // Only migrate local tasks if the user has no tasks in Supabase and hasn't migrated yet
+          // Task migration logic
           if (!hasMigratedTasks && userTasks.length === 0) {
             try {
               const localTasksJson = localStorage.getItem("tasks");
               if (localTasksJson) {
                 const localTasks = JSON.parse(localTasksJson);
+                const formattedLocalTasks = localTasks.map((task: any) => ({
+                  ...task,
+                  date:
+                    task.date || format(new Date(task.createdAt), "yyyy-MM-dd"),
+                  createdAt: new Date(task.createdAt),
+                  completedAt: task.completedAt
+                    ? new Date(task.completedAt)
+                    : undefined,
+                  deadline: task.deadline ? new Date(task.deadline) : undefined,
+                }));
 
-                // Add date field to existing tasks if it doesn't exist
-                const formattedLocalTasks = localTasks.map((task: any) => {
-                  try {
-                    return {
-                      ...task,
-                      date:
-                        task.date ||
-                        format(new Date(task.createdAt), "yyyy-MM-dd"),
-                      // Ensure dates are properly parsed
-                      createdAt: new Date(task.createdAt),
-                      completedAt: task.completedAt
-                        ? new Date(task.completedAt)
-                        : undefined,
-                      deadline: task.deadline
-                        ? new Date(task.deadline)
-                        : undefined,
-                    };
-                  } catch (error) {
-                    console.error("Error formatting local task:", error, task);
-                    // Return a minimal valid task if there's an error
-                    return {
-                      ...task,
-                      date: task.date || format(new Date(), "yyyy-MM-dd"),
-                      createdAt: new Date(),
-                    };
-                  }
-                });
+                const migrationSuccess = await migrateLocalTasks(
+                  user.id,
+                  formattedLocalTasks
+                );
+                if (migrationSuccess) {
+                  localStorage.removeItem("tasks");
+                  setHasMigratedTasks(true);
+                  localStorage.setItem(`migrated_${user.id}`, "true");
 
-                // Migrate local tasks to Supabase
-                await migrateLocalTasks(user.id, formattedLocalTasks);
-
-                // Clear localStorage after migration
-                localStorage.removeItem("tasks");
-
-                // Set migration flag
-                setHasMigratedTasks(true);
-                localStorage.setItem(`migrated_${user.id}`, "true");
-
-                // Reload tasks from Supabase
-                const updatedTasks = await getTasks(user.id);
-                setTasks(updatedTasks);
+                  const updatedTasks = await getTasks(user.id);
+                  setTasks(updatedTasks);
+                } else {
+                  showToast(
+                    "Task migration from local storage failed. Please reload or contact support if issue persists.",
+                    "error"
+                  );
+                }
               }
             } catch (migrationError) {
               console.error("Error during task migration:", migrationError);
-              // Don't set the migration flag if there was an error
-              // This will allow another attempt on next load
+              showToast(
+                "Task migration from local storage failed. Please reload or contact support if issue persists.",
+                "error"
+              );
             }
           } else if (!hasMigratedTasks) {
-            // User already has tasks in Supabase, just mark as migrated
             setHasMigratedTasks(true);
             localStorage.setItem(`migrated_${user.id}`, "true");
-            // Clear localStorage to prevent future migrations
             localStorage.removeItem("tasks");
           }
         } else if (!isAuthLoading) {
@@ -163,35 +141,17 @@ export default function Home() {
             const savedTasks = localStorage.getItem("tasks");
             if (savedTasks) {
               const parsedTasks = JSON.parse(savedTasks);
-
-              // Add date field to existing tasks if it doesn't exist
               setTasks(
-                parsedTasks.map((task: any) => {
-                  try {
-                    return {
-                      ...task,
-                      date:
-                        task.date ||
-                        format(new Date(task.createdAt), "yyyy-MM-dd"),
-                      // Ensure dates are properly parsed
-                      createdAt: new Date(task.createdAt),
-                      completedAt: task.completedAt
-                        ? new Date(task.completedAt)
-                        : undefined,
-                      deadline: task.deadline
-                        ? new Date(task.deadline)
-                        : undefined,
-                    };
-                  } catch (error) {
-                    console.error("Error parsing task date:", error, task);
-                    // Return a minimal valid task if there's an error
-                    return {
-                      ...task,
-                      date: format(new Date(), "yyyy-MM-dd"),
-                      createdAt: new Date(),
-                    };
-                  }
-                })
+                parsedTasks.map((task: any) => ({
+                  ...task,
+                  date:
+                    task.date || format(new Date(task.createdAt), "yyyy-MM-dd"),
+                  createdAt: new Date(task.createdAt),
+                  completedAt: task.completedAt
+                    ? new Date(task.completedAt)
+                    : undefined,
+                  deadline: task.deadline ? new Date(task.deadline) : undefined,
+                }))
               );
             }
           } catch (localStorageError) {
@@ -204,10 +164,8 @@ export default function Home() {
         }
       } catch (error) {
         console.error("Error loading tasks:", error);
-        // If there's an error, start with an empty array
         setTasks([]);
       } finally {
-        // Always set isLoaded to true, even if there was an error
         setIsLoaded(true);
       }
     };
@@ -230,11 +188,8 @@ export default function Home() {
 
   // Add a new task
   const addTask = async (title: string, date: string, deadline?: Date) => {
-    // If a deadline is provided, use its date as the task date
     const taskDate = deadline ? format(deadline, "yyyy-MM-dd") : date;
-
     if (user) {
-      // User is logged in, add task to Supabase
       try {
         const newTask = await addTaskToDb(user.id, title, taskDate, deadline);
         setTasks([...tasks, newTask]);
@@ -242,7 +197,6 @@ export default function Home() {
         console.error("Error adding task to Supabase:", error);
       }
     } else {
-      // User is not logged in, add task to localStorage
       const newTask: Task = {
         id: Date.now().toString(),
         title,
@@ -257,74 +211,58 @@ export default function Home() {
 
   // Toggle task completion status
   const toggleTaskCompletion = async (id: string) => {
-    // Find the task to toggle
     const taskToToggle = tasks.find((task) => task.id === id);
     if (!taskToToggle) return;
 
-    // Update the task in state optimistically
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === id) {
-          return {
+    const updatedTasks = tasks.map((task) =>
+      task.id === id
+        ? {
             ...task,
             completed: !task.completed,
             completedAt: !task.completed ? new Date() : undefined,
-          };
-        }
-        return task;
-      })
+          }
+        : task
     );
+    setTasks(updatedTasks);
 
     if (user) {
-      // User is logged in, update task in Supabase
       try {
         await toggleTaskCompletionInDb(id, !taskToToggle.completed);
       } catch (error) {
         console.error("Error toggling task completion in Supabase:", error);
-        // Revert the optimistic update if there's an error
-        setTasks(
-          tasks.map((task) => {
-            if (task.id === id) {
-              return taskToToggle;
-            }
-            return task;
-          })
-        );
+        // Revert optimistic update on error
+        setTasks(tasks);
       }
     }
   };
 
   // Delete a task
   const deleteTask = async (id: string) => {
-    // Remove the task from state optimistically
+    const originalTasks = [...tasks];
     setTasks(tasks.filter((task) => task.id !== id));
-
     if (user) {
-      // User is logged in, delete task from Supabase
       try {
         await deleteTaskFromDb(id);
       } catch (error) {
         console.error("Error deleting task from Supabase:", error);
-        // If there's an error, fetch the tasks again to ensure consistency
-        if (user) {
-          const userTasks = await getTasks(user.id);
-          setTasks(userTasks);
-        }
+        // Revert optimistic update on error
+        setTasks(originalTasks);
       }
     }
   };
 
-  // Handle date change in day view
+  // Handle date change
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
   };
 
-  // Handle month change in calendar view
+  // Handle month change
   const handleMonthChange = (month: Date) => {
     setSelectedMonth(month);
+    setCurrentView("calendar");
   };
 
-  // Handle day click in calendar view
+  // Handle day click
   const handleDayClick = (date: string) => {
     setSelectedDate(date);
     setCurrentView("day");
@@ -335,64 +273,72 @@ export default function Home() {
     setCurrentView(view);
   };
 
-  // Create a sample task if there are no tasks and the app is loaded
-  useEffect(() => {
-    // Only create a welcome task for non-logged-in users who have no tasks
-    // and have been using the app for at least 1 second (to avoid creating it during login transitions)
-    const hasBeenLoadedForAWhile = isLoaded && Date.now() - loadTime > 1000;
-
-    if (
-      isLoaded &&
-      tasks.length === 0 &&
-      !isAuthLoading &&
-      !user &&
-      hasBeenLoadedForAWhile
-    ) {
-      const today = format(new Date(), "yyyy-MM-dd");
-      addTask(
-        "Welcome to Joytask! Click the + button to add your first task",
-        today
-      );
-    }
-  }, [isLoaded, tasks.length, isAuthLoading, user]);
-
-  // Loading state
-  if (!isLoaded || isAuthLoading) {
+  // Conditional rendering based on auth state
+  if (isAuthLoading) {
     return (
-      <div className="space-y-8">
-        <header className="text-center">
-          <h1 className="text-4xl font-bold text-primary mb-2">Joytask</h1>
-          <p className="text-gray-600">Celebrate your accomplishments</p>
-        </header>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
       </div>
     );
   }
 
-  // If user is not logged in, show welcome screen
   if (!user) {
-    return (
-      <div className="space-y-8">
-        <header className="text-center">
-          <h1 className="text-4xl font-bold text-primary mb-2">Joytask</h1>
-          <p className="text-gray-600">Celebrate your accomplishments</p>
-        </header>
-        <WelcomeScreen />
-      </div>
-    );
+    // Use the LandingPage component for non-logged-in users
+    return <LandingPage />;
   }
+
+  // Calculate stats for the top section
+  const todaysTasks = tasks.filter((task) => task.date === selectedDate);
+  const activeTasksCount = todaysTasks.filter((task) => !task.completed).length;
+  const completedTasksCount = todaysTasks.filter(
+    (task) => task.completed
+  ).length;
+  const totalTasksCount = todaysTasks.length;
+  const completionPercentage =
+    totalTasksCount > 0
+      ? Math.round((completedTasksCount / totalTasksCount) * 100)
+      : 0;
 
   return (
-    <div className="space-y-8">
-      <header className="text-center">
-        <h1 className="text-4xl font-bold text-primary mb-2">Joytask</h1>
-        <p className="text-gray-600">Celebrate your accomplishments</p>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">My Tasks</h1>
+        <p className="text-gray-500">
+          Organize your day and boost productivity
+        </p>
       </header>
 
+      {/* Re-integrated Navigation */}
       <Navigation currentView={currentView} onViewChange={handleViewChange} />
 
+      {/* Task Summary */}
+      {currentView === "day" && (
+        <div className="bg-white rounded-lg shadow p-6 mb-8 flex justify-around items-center text-center">
+          <div className="flex flex-col items-center">
+            <Circle className="w-10 h-10 text-blue-500 mb-2" />
+            <span className="text-2xl font-semibold text-gray-700">
+              {activeTasksCount}
+            </span>
+            <span className="text-sm text-gray-500">Active Tasks</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <CheckCircle className="w-10 h-10 text-green-500 mb-2" />
+            <span className="text-2xl font-semibold text-gray-700">
+              {completedTasksCount}
+            </span>
+            <span className="text-sm text-gray-500">Completed</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <BarChart className="w-10 h-10 text-purple-500 mb-2" />
+            <span className="text-2xl font-semibold text-gray-700">
+              {completionPercentage}%
+            </span>
+            <span className="text-sm text-gray-500">Completion</span>
+          </div>
+        </div>
+      )}
+
+      {/* Conditional rendering based on currentView */}
       {currentView === "day" ? (
         <DayDetail
           date={selectedDate}

@@ -36,11 +36,11 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`${bgColor} p-2 min-h-[80px] ${
+      className={`${bgColor} p-2 min-h-[60px] sm:min-h-[80px] ${
         isCurrentMonth ? "text-gray-800" : "text-gray-400"
       } ${
         isToday ? "ring-2 ring-primary" : ""
-      } hover:bg-gray-50 cursor-pointer transition-colors`}
+      } hover:bg-gray-50 cursor-pointer transition-colors relative`}
     >
       <div className="flex justify-between items-start">
         <span
@@ -54,13 +54,17 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
         </span>
 
         {totalTasks > 0 && (
-          <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
+          <span className="hidden sm:inline-block text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
             {completedTasks}/{totalTasks}
           </span>
         )}
       </div>
 
-      <div className="mt-1 space-y-1">
+      {totalTasks > 0 && (
+        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+      )}
+
+      <div className="mt-1 space-y-1 hidden sm:block">
         {displayTasks.map((task) => (
           <div
             key={task.id}

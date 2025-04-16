@@ -90,22 +90,8 @@ const Calendar: React.FC<CalendarProps> = ({
   // Get tasks for a specific day
   const getTasksForDay = (date: Date): Task[] => {
     const dateString = format(date, "yyyy-MM-dd");
-
-    // Only include tasks that have a deadline on this date
-    return tasks.filter((task) => {
-      if (task.deadline) {
-        // If the task has a deadline, check if it falls on this date
-        try {
-          return isSameDay(new Date(task.deadline), date);
-        } catch (error) {
-          console.error("Error comparing dates:", error);
-          return false;
-        }
-      }
-
-      // For backward compatibility, include tasks without deadlines that were created on this date
-      return task.date === dateString;
-    });
+    // Standardized filter: Use the 'date' field (YYYY-MM-DD string) directly.
+    return tasks.filter((task) => task.date === dateString);
   };
 
   return (
@@ -170,12 +156,21 @@ const Calendar: React.FC<CalendarProps> = ({
 
       <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
         {/* Day headers */}
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+        {[
+          { short: "S", long: "Sun" },
+          { short: "M", long: "Mon" },
+          { short: "T", long: "Tue" },
+          { short: "W", long: "Wed" },
+          { short: "T", long: "Thu" },
+          { short: "F", long: "Fri" },
+          { short: "S", long: "Sat" },
+        ].map((day) => (
           <div
-            key={day}
+            key={day.long}
             className="bg-gray-100 p-2 text-center text-sm font-medium text-gray-700"
           >
-            {day}
+            <span className="hidden sm:inline">{day.long}</span>
+            <span className="sm:hidden">{day.short}</span>
           </div>
         ))}
 

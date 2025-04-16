@@ -9,8 +9,10 @@ Joytask is a modern to-do list application that celebrates task completion. The 
 - Check off completed tasks
 - View completed tasks on the same screen as active tasks
 - Track daily task completion statistics
-- Modern, responsive UI
-- Celebration animation when tasks are completed
+- Modern, responsive UI optimized for both desktop and mobile
+- User profile with dropdown menu for account actions
+- Condensed calendar view on mobile devices
+- Celebration animation with confetti and toast notifications when tasks are completed
 
 ## Tech Stack
 
@@ -19,6 +21,7 @@ Joytask is a modern to-do list application that celebrates task completion. The 
 - TypeScript
 - Tailwind CSS
 - date-fns for date formatting
+- shadcn/ui components for enhanced UI elements
 
 ## Getting Started
 
@@ -52,7 +55,18 @@ yarn dev
 
 - `src/app`: Next.js app router files
 - `src/components`: React components
+- `src/components/ui`: Reusable UI components from shadcn
 - `src/lib`: Utility functions and TypeScript types
+- `src/context`: React context for state management
+
+## User Experience Improvements
+
+- **Mobile-Optimized**: All screens are now fully responsive and optimized for various device sizes
+- **User Profile Dropdown**: User profile now includes a dropdown menu with sign-out option
+- **Compact Calendar View**: Calendar days display in a compact format on mobile devices
+- **Space Optimization**: Task titles and UI elements are properly sized across all viewport widths
+- **Celebration Animations**: Engaging confetti animation and toast notifications celebrate task completion, reinforcing positive user behavior
+- **Visual Feedback**: Subtle visual cues and transitions provide immediate feedback for task interactions
 
 ## User Flow
 

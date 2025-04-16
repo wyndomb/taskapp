@@ -5,12 +5,18 @@ import Link from "next/link";
 import LoginButton from "./auth/LoginButton";
 import UserProfile from "./auth/UserProfile";
 import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation: React.FC<NavigationProps> = ({
   currentView,
   onViewChange,
 }) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <nav className="bg-white shadow-sm mb-8 rounded-lg">
@@ -38,8 +44,28 @@ const Navigation: React.FC<NavigationProps> = ({
           </button>
         </div>
         <div className="flex items-center space-x-4">
-          {user && <UserProfile />}
-          <LoginButton />
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="focus:outline-none rounded-full p-1 hover:bg-gray-100 transition-colors"
+                  aria-label="User menu"
+                >
+                  <UserProfile />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="text-red-500 cursor-pointer"
+                >
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <LoginButton />
+          )}
         </div>
       </div>
     </nav>

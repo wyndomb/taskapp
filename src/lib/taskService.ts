@@ -128,7 +128,7 @@ export const deleteTask = async (taskId: string): Promise<void> => {
 export const migrateLocalTasks = async (
   userId: string,
   localTasks: Task[]
-): Promise<void> => {
+): Promise<boolean> => {
   try {
     // Format tasks for Supabase
     const tasksToInsert = localTasks.map((task) => ({
@@ -141,16 +141,18 @@ export const migrateLocalTasks = async (
       user_id: userId,
     }));
 
-    if (tasksToInsert.length === 0) return;
+    if (tasksToInsert.length === 0) return true;
 
     const { error } = await supabase.from("tasks").insert(tasksToInsert);
 
-    if (error) {
+    if (!error) {
+      return true;
+    } else {
       console.error("Error migrating tasks:", error);
-      throw error;
+      return false;
     }
   } catch (error) {
     console.error("Error in migrateLocalTasks:", error);
-    throw error;
+    return false;
   }
 };
