@@ -41,7 +41,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
           task.completed ? "bg-green-50" : ""
         }`}
       >
-        <div className="flex items-center space-x-3 pr-2">
+        <div className="flex items-center space-x-3 pr-2 min-h-[40px]">
           <Checkbox
             id={`task-${task.id}`}
             checked={task.completed}
@@ -51,19 +51,23 @@ const TaskItem: React.FC<TaskItemProps> = ({
             }
             className="h-5 w-5 transition-all duration-300 hover:scale-110"
           />
-          <label
-            htmlFor={`task-${task.id}`}
-            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-all duration-300 
-            ${task.completed ? "line-through text-gray-500" : "text-gray-800"}
-            ${task.completed ? "transform-gpu -translate-y-px" : ""}`}
-          >
-            {task.title}
-          </label>
-          {task.completed && (
-            <span className="ml-2 text-green-500 text-xs font-medium">
+          <div className="flex flex-col justify-center">
+            <label
+              htmlFor={`task-${task.id}`}
+              className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-all duration-300 
+              ${task.completed ? "line-through text-gray-500" : "text-gray-800"}
+              ${task.completed ? "transform-gpu -translate-y-px" : ""}`}
+            >
+              {task.title}
+            </label>
+            <span
+              className={`text-green-500 text-xs font-medium transition-opacity duration-200 ${
+                task.completed ? "opacity-100 mt-1" : "opacity-0 mt-1"
+              }`}
+            >
               ✓ Completed
             </span>
-          )}
+          </div>
         </div>
         <Button
           variant="ghost"
