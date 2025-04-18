@@ -53,7 +53,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
           />
           <label
             htmlFor={`task-${task.id}`}
-            className={`truncate text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-all duration-300 
+            className={`break-words whitespace-normal text-sm font-medium leading-normal peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-all duration-300 
             ${task.completed ? "line-through text-gray-500" : "text-gray-800"}
             ${task.completed ? "transform-gpu -translate-y-px" : ""}`}
             style={{ maxWidth: "100%" }}
