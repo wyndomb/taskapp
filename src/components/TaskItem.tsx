@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { TaskItemProps } from "@/lib/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -14,14 +14,19 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onDeleteTask,
 }) => {
   const [showCelebration, setShowCelebration] = useState(false);
-  useToast();
+  const { showToast } = useToast();
+  const prevCompletedRef = useRef(task.completed);
+
+  useEffect(() => {
+    // Only trigger when transitioning from incomplete to complete
+    if (!prevCompletedRef.current && task.completed) {
+      setShowCelebration(true);
+      showToast(`Task "${task.title}" completed! 🎉`, "success");
+    }
+    prevCompletedRef.current = task.completed;
+  }, [task.completed, task.title, showToast]);
 
   const handleTaskCompletion = () => {
-    // Only show celebration when marking a task as complete, not when unmarking
-    if (!task.completed) {
-      // setShowCelebration(true);
-      // showToast(`Task "${task.title}" completed! 🎉`, "success");
-    }
     onToggleCompletion(task.id);
   };
 
