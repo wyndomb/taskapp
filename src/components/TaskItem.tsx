@@ -14,7 +14,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onDeleteTask,
 }) => {
   const [showCelebration, setShowCelebration] = useState(false);
-  const { showToast } = useToast();
+  useToast();
 
   const handleTaskCompletion = () => {
     // Only show celebration when marking a task as complete, not when unmarking
