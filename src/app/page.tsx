@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Task } from "@/lib/types";
 import { format } from "date-fns";
 import Navigation from "@/components/Navigation";
@@ -228,46 +228,52 @@ export default function Home() {
   };
 
   // Toggle task completion status
-  const toggleTaskCompletion = async (id: string) => {
-    const taskToToggle = tasks.find((task) => task.id === id);
-    if (!taskToToggle) return;
+  const toggleTaskCompletion = useCallback(
+    async (id: string) => {
+      const taskToToggle = tasks.find((task) => task.id === id);
+      if (!taskToToggle) return;
 
-    const updatedTasks = tasks.map((task) =>
-      task.id === id
-        ? {
-            ...task,
-            completed: !task.completed,
-            completedAt: !task.completed ? new Date() : undefined,
-          }
-        : task
-    );
-    setTasks(updatedTasks);
+      const updatedTasks = tasks.map((task) =>
+        task.id === id
+          ? {
+              ...task,
+              completed: !task.completed,
+              completedAt: !task.completed ? new Date() : undefined,
+            }
+          : task
+      );
+      setTasks(updatedTasks);
 
-    if (user) {
-      try {
-        await toggleTaskCompletionInDb(id, !taskToToggle.completed);
-      } catch (error) {
-        console.error("Error toggling task completion in Supabase:", error);
-        // Revert optimistic update on error
-        setTasks(tasks);
+      if (user) {
+        try {
+          await toggleTaskCompletionInDb(id, !taskToToggle.completed);
+        } catch (error) {
+          console.error("Error toggling task completion in Supabase:", error);
+          // Revert optimistic update on error
+          setTasks(tasks);
+        }
       }
-    }
-  };
+    },
+    [tasks, user]
+  );
 
   // Delete a task
-  const deleteTask = async (id: string) => {
-    const originalTasks = [...tasks];
-    setTasks(tasks.filter((task) => task.id !== id));
-    if (user) {
-      try {
-        await deleteTaskFromDb(id);
-      } catch (error) {
-        console.error("Error deleting task from Supabase:", error);
-        // Revert optimistic update on error
-        setTasks(originalTasks);
+  const deleteTask = useCallback(
+    async (id: string) => {
+      const originalTasks = [...tasks];
+      setTasks(tasks.filter((task) => task.id !== id));
+      if (user) {
+        try {
+          await deleteTaskFromDb(id);
+        } catch (error) {
+          console.error("Error deleting task from Supabase:", error);
+          // Revert optimistic update on error
+          setTasks(originalTasks);
+        }
       }
-    }
-  };
+    },
+    [tasks, user]
+  );
 
   // Handle date change
   const handleDateChange = (date: string) => {
