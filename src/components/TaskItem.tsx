@@ -37,7 +37,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   return (
     <>
       <li
-        className={`flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0 relative overflow-hidden group ${
+        className={`flex items-center justify-between px-4 py-2 border-b border-gray-200 last:border-b-0 relative overflow-hidden group ${
           task.completed ? "bg-green-50" : ""
         }`}
       >
