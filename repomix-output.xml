@@ -94,8 +94,9 @@ src/
   middleware.ts
 supabase/
   schema.sql
-.env.example
+.eslintrc.json
 .gitignore
+code-review-plan.md
 components.json
 next.config.js
 package.json
@@ -110,29 +111,104 @@ vercel.json
 <files>
 This section contains the contents of the repository's files.
 
-<file path="src/components/ui/BarChart.tsx">
-import React from "react";
+<file path=".cursor/mcp.json">
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:@M*-Xxbu!Bjnv9*jhjvWNi6X@db.ctavqkqnqjxvhovhgcip.supabase.co:5432/postgres"
+      ]
+    }
+  }
+}
+</file>
 
-interface BarChartProps extends React.SVGProps<SVGSVGElement> {}
+<file path="public/README.md">
+# Public Assets
 
-export const BarChart: React.FC<BarChartProps> = (props) => {
+This directory contains public assets for the Joytask application.
+
+## Required Images
+
+Please add the following images to this directory:
+
+1. `favicon.ico` - The favicon for the website (16x16, 32x32, and 48x48 pixels)
+2. `og-image.jpg` - The OpenGraph image for social media sharing (1200x630 pixels)
+
+These images are referenced in the application code and are important for proper display on browsers and social media platforms.
+</file>
+
+<file path="public/robots.txt">
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location (add when you have a sitemap)
+# Sitemap: https://joytask.vercel.app/sitemap.xml
+</file>
+
+<file path="src/app/auth/callback/route.ts">
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+
+  if (code) {
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+
+    // Exchange the code for a session
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+
+  // URL to redirect to after sign in process completes
+  return NextResponse.redirect(new URL("/", requestUrl.origin));
+}
+</file>
+
+<file path="src/components/auth/LoginButton.tsx">
+import { useAuth } from "@/context/AuthContext";
+
+export default function LoginButton() {
+  const { user, signIn, signOut, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <button
+        className="bg-gray-200 text-gray-500 px-4 py-2 rounded-md opacity-50 cursor-not-allowed"
+        disabled
+      >
+        Loading...
+      </button>
+    );
+  }
+
+  if (user) {
+    return (
+      <button
+        onClick={() => signOut()}
+        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors"
+      >
+        Sign Out
+      </button>
+    );
+  }
+
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
+    <button
+      onClick={() => signIn()}
+      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
     >
-      <line x1="12" y1="20" x2="12" y2="10" />
-      <line x1="18" y1="20" x2="18" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="16" />
-    </svg>
+      Sign In with Google
+    </button>
   );
-};
+}
 </file>
 
 <file path="src/components/ui/button.tsx">
@@ -195,84 +271,6 @@ Button.displayName = "Button"
 export { Button, buttonVariants }
 </file>
 
-<file path="src/components/ui/CelebrationEffect.tsx">
-"use client";
-
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import confetti from "canvas-confetti";
-
-interface CelebrationEffectProps {
-  show: boolean;
-  onComplete?: () => void;
-}
-
-const CelebrationEffect: React.FC<CelebrationEffectProps> = ({
-  show,
-  onComplete,
-}) => {
-  useEffect(() => {
-    if (show) {
-      // Fire confetti
-      const duration = 2000;
-      const end = Date.now() + duration;
-
-      const colors = ["#00FF00", "#7CFC00", "#32CD32", "#98FB98", "#28A745"];
-
-      (function frame() {
-        confetti({
-          particleCount: 5,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: colors,
-        });
-
-        confetti({
-          particleCount: 5,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: colors,
-        });
-
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        } else if (onComplete) {
-          setTimeout(() => {
-            onComplete();
-          }, 200);
-        }
-      })();
-    }
-  }, [show, onComplete]);
-
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-green-100 text-green-800 font-bold text-xl p-4 rounded-lg shadow-lg"
-      >
-        <span role="img" aria-label="Celebration">
-          🎉
-        </span>{" "}
-        Task Completed!{" "}
-        <span role="img" aria-label="Celebration">
-          🎊
-        </span>
-      </motion.div>
-    </div>
-  );
-};
-
-export default CelebrationEffect;
-</file>
-
 <file path="src/components/ui/checkbox.tsx">
 "use client"
 
@@ -304,53 +302,6 @@ const Checkbox = React.forwardRef<
 Checkbox.displayName = CheckboxPrimitive.Root.displayName
 
 export { Checkbox }
-</file>
-
-<file path="src/components/ui/CheckCircle.tsx">
-import React from "react";
-
-interface CheckCircleProps extends React.SVGProps<SVGSVGElement> {}
-
-export const CheckCircle: React.FC<CheckCircleProps> = (props) => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  );
-};
-</file>
-
-<file path="src/components/ui/Circle.tsx">
-import React from "react";
-
-interface CircleProps extends React.SVGProps<SVGSVGElement> {}
-
-export const Circle: React.FC<CircleProps> = (props) => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="12" cy="12" r="10" />
-    </svg>
-  );
-};
 </file>
 
 <file path="src/components/ui/dropdown-menu.tsx">
@@ -667,379 +618,6 @@ const Toast: React.FC<ToastProps> = ({
 export default Toast;
 </file>
 
-<file path="src/components/LandingPage.tsx">
-import { useAuth } from "@/context/AuthContext";
-import LoginButton from "./auth/LoginButton";
-import { Button } from "./ui/button";
-import { CheckCircle } from "./ui/CheckCircle";
-
-export default function WelcomeScreen() {
-  const { isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b to-slate-50 flex flex-col items-center justify-center px-4 py-12">
-      <div className="max-w-6xl w-full grid md:grid-cols-2 gap-12 items-center">
-        {/* Left Column - Hero Section */}
-        <div className="flex flex-col space-y-6 order-1 md:order-1">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-primary">
-              Joytask
-            </h1>
-            <p className="text-xl md:text-2xl text-slate-700 mt-2 font-light">
-              Celebrate every completed task
-            </p>
-          </div>
-
-          <p className="text-slate-600 text-lg">
-            A task management app that helps you stay organized and turns
-            productivity into moments of joy.
-          </p>
-
-          <div className="mt-4">
-            <LoginButton />
-          </div>
-
-          <p className="text-sm text-slate-500 mt-2">
-            Your data is securely stored and only accessible to you.
-          </p>
-        </div>
-
-        {/* Right Column - Features */}
-        <div className="bg-white rounded-xl shadow-lg p-8 border border-slate-100 order-2 md:order-2">
-          <h3 className="text-xl font-semibold mb-5 text-primary">
-            Why Joytask?
-          </h3>
-
-          <div className="space-y-5">
-            <FeatureItem
-              title="Celebrate Achievements"
-              description="Experience delightful animations when you complete tasks"
-            />
-
-            <FeatureItem
-              title="Intuitive Organization"
-              description="View your tasks in daily or calendar format"
-            />
-
-            <FeatureItem
-              title="Deadline Management"
-              description="Set deadlines and never miss important tasks"
-            />
-
-            <FeatureItem
-              title="Access Anywhere"
-              description="Cloud sync keeps your tasks available on all devices"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface FeatureItemProps {
-  title: string;
-  description: string;
-}
-
-function FeatureItem({ title, description }: FeatureItemProps) {
-  return (
-    <div className="flex items-start space-x-3">
-      <div className="mt-1 text-green-500 flex-shrink-0">
-        <CheckCircle className="h-5 w-5" />
-      </div>
-      <div>
-        <h4 className="font-medium text-slate-800">{title}</h4>
-        <p className="text-slate-600 text-sm mt-1">{description}</p>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/context/ToastContext.tsx">
-"use client";
-
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import Toast from "@/components/ui/Toast";
-
-type ToastType = "success" | "error" | "info";
-
-interface ToastData {
-  id: string;
-  message: string;
-  type: ToastType;
-  duration?: number;
-}
-
-interface ToastContextValue {
-  showToast: (message: string, type: ToastType, duration?: number) => void;
-}
-
-const ToastContext = createContext<ToastContextValue | undefined>(undefined);
-
-export const ToastProvider = ({ children }: { children: ReactNode }) => {
-  const [toasts, setToasts] = useState<ToastData[]>([]);
-
-  const showToast = (
-    message: string,
-    type: ToastType = "success",
-    duration = 3000
-  ) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type, duration }]);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  };
-
-  return (
-    <ToastContext.Provider value={{ showToast }}>
-      {children}
-      <div className="toast-container">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            duration={toast.duration}
-            onClose={() => removeToast(toast.id)}
-          />
-        ))}
-      </div>
-    </ToastContext.Provider>
-  );
-};
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (context === undefined) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-  return context;
-};
-</file>
-
-<file path="src/lib/utils.ts">
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-</file>
-
-<file path="components.json">
-{
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
-  "rsc": true,
-  "tsx": true,
-  "tailwind": {
-    "config": "tailwind.config.js",
-    "css": "src/app/globals.css",
-    "baseColor": "neutral",
-    "cssVariables": true,
-    "prefix": ""
-  },
-  "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
-  },
-  "iconLibrary": "lucide"
-}
-</file>
-
-<file path=".cursor/mcp.json">
-{
-  "mcpServers": {
-    "supabase": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-postgres",
-        "postgresql://postgres:@M*-Xxbu!Bjnv9*jhjvWNi6X@db.ctavqkqnqjxvhovhgcip.supabase.co:5432/postgres"
-      ]
-    }
-  }
-}
-</file>
-
-<file path=".github/workflows/ci.yml">
-name: CI
-
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x]
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Lint
-        run: npm run lint
-</file>
-
-<file path="public/README.md">
-# Public Assets
-
-This directory contains public assets for the Joytask application.
-
-## Required Images
-
-Please add the following images to this directory:
-
-1. `favicon.ico` - The favicon for the website (16x16, 32x32, and 48x48 pixels)
-2. `og-image.jpg` - The OpenGraph image for social media sharing (1200x630 pixels)
-
-These images are referenced in the application code and are important for proper display on browsers and social media platforms.
-</file>
-
-<file path="public/robots.txt">
-# Allow all crawlers
-User-agent: *
-Allow: /
-
-# Sitemap location (add when you have a sitemap)
-# Sitemap: https://joytask.vercel.app/sitemap.xml
-</file>
-
-<file path="src/app/auth/callback/route.ts">
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
-
-export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get("code");
-
-  if (code) {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-
-    // Exchange the code for a session
-    await supabase.auth.exchangeCodeForSession(code);
-  }
-
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(new URL("/", requestUrl.origin));
-}
-</file>
-
-<file path="src/components/auth/LoginButton.tsx">
-import { useAuth } from "@/context/AuthContext";
-
-export default function LoginButton() {
-  const { user, signIn, signOut, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <button
-        className="bg-gray-200 text-gray-500 px-4 py-2 rounded-md opacity-50 cursor-not-allowed"
-        disabled
-      >
-        Loading...
-      </button>
-    );
-  }
-
-  if (user) {
-    return (
-      <button
-        onClick={() => signOut()}
-        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors"
-      >
-        Sign Out
-      </button>
-    );
-  }
-
-  return (
-    <button
-      onClick={() => signIn()}
-      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
-    >
-      Sign In with Google
-    </button>
-  );
-}
-</file>
-
-<file path="src/components/auth/UserProfile.tsx">
-import { useAuth } from "@/context/AuthContext";
-import Image from "next/image";
-
-export default function UserProfile() {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="animate-pulse h-8 w-8 bg-gray-200 rounded-full"></div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  const avatarUrl = user.user_metadata?.avatar_url;
-  const name = user.user_metadata?.full_name || user.email || "User";
-
-  return (
-    <div className="flex items-center space-x-2">
-      {avatarUrl ? (
-        <div className="relative h-8 w-8 rounded-full overflow-hidden">
-          <Image
-            src={avatarUrl}
-            alt={`${name}'s avatar`}
-            fill
-            className="object-cover"
-          />
-        </div>
-      ) : (
-        <div className="h-8 w-8 bg-primary text-white rounded-full flex items-center justify-center">
-          {name.charAt(0).toUpperCase()}
-        </div>
-      )}
-      <span className="hidden sm:inline text-sm font-medium">{name}</span>
-    </div>
-  );
-}
-</file>
-
 <file path="src/context/AuthContext.tsx">
 "use client";
 
@@ -1147,6 +725,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+</file>
+
+<file path="src/context/ToastContext.tsx">
+"use client";
+
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import Toast from "@/components/ui/Toast";
+
+type ToastType = "success" | "error" | "info";
+
+interface ToastData {
+  id: string;
+  message: string;
+  type: ToastType;
+  duration?: number;
+}
+
+interface ToastContextValue {
+  showToast: (message: string, type: ToastType, duration?: number) => void;
+}
+
+const ToastContext = createContext<ToastContextValue | undefined>(undefined);
+
+export const ToastProvider = ({ children }: { children: ReactNode }) => {
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  const showToast = (
+    message: string,
+    type: ToastType = "success",
+    duration = 3000
+  ) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, message, type, duration }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
+
+  return (
+    <ToastContext.Provider value={{ showToast }}>
+      {children}
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            duration={toast.duration}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+};
+
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  return context;
 };
 </file>
 
@@ -1259,163 +901,13 @@ export const getCurrentUserId = async () => {
 };
 </file>
 
-<file path="src/lib/taskService.ts">
-import { supabase } from "./supabase";
-import { Task } from "./types";
-import { format } from "date-fns";
+<file path="src/lib/utils.ts">
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
-// Get all tasks for a user
-export const getTasks = async (userId: string): Promise<Task[]> => {
-  try {
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .eq("user_id", userId);
-
-    if (error) {
-      console.error("Error fetching tasks:", error);
-      throw error;
-    }
-
-    if (!data) {
-      return [];
-    }
-
-    // Convert database format to app format
-    return data.map((task) => ({
-      id: task.id,
-      title: task.title,
-      completed: task.completed,
-      createdAt: new Date(task.created_at),
-      completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
-      deadline: task.deadline ? new Date(task.deadline) : undefined,
-      date: task.date,
-      user_id: task.user_id,
-    }));
-  } catch (error) {
-    console.error("Error in getTasks:", error);
-    throw error;
-  }
-};
-
-// Add a new task
-export const addTask = async (
-  userId: string,
-  title: string,
-  date: string,
-  deadline?: Date
-): Promise<Task> => {
-  try {
-    const newTask = {
-      title,
-      completed: false,
-      created_at: new Date().toISOString(),
-      date,
-      deadline: deadline?.toISOString() || null,
-      user_id: userId,
-    };
-
-    const { data, error } = await supabase
-      .from("tasks")
-      .insert(newTask)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error adding task:", error);
-      throw error;
-    }
-
-    if (!data) {
-      throw new Error("No data returned from insert operation");
-    }
-
-    // Convert database format to app format
-    return {
-      id: data.id,
-      title: data.title,
-      completed: data.completed,
-      createdAt: new Date(data.created_at),
-      completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
-      deadline: data.deadline ? new Date(data.deadline) : undefined,
-      date: data.date,
-      user_id: data.user_id,
-    };
-  } catch (error) {
-    console.error("Error in addTask:", error);
-    throw error;
-  }
-};
-
-// Toggle task completion
-export const toggleTaskCompletion = async (
-  taskId: string,
-  completed: boolean
-): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from("tasks")
-      .update({
-        completed,
-        completed_at: completed ? new Date().toISOString() : null,
-      })
-      .eq("id", taskId);
-
-    if (error) {
-      console.error("Error toggling task completion:", error);
-      throw error;
-    }
-  } catch (error) {
-    console.error("Error in toggleTaskCompletion:", error);
-    throw error;
-  }
-};
-
-// Delete a task
-export const deleteTask = async (taskId: string): Promise<void> => {
-  try {
-    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
-
-    if (error) {
-      console.error("Error deleting task:", error);
-      throw error;
-    }
-  } catch (error) {
-    console.error("Error in deleteTask:", error);
-    throw error;
-  }
-};
-
-// Migrate localStorage tasks to Supabase
-export const migrateLocalTasks = async (
-  userId: string,
-  localTasks: Task[]
-): Promise<void> => {
-  try {
-    // Format tasks for Supabase
-    const tasksToInsert = localTasks.map((task) => ({
-      title: task.title,
-      completed: task.completed,
-      created_at: task.createdAt.toISOString(),
-      completed_at: task.completedAt ? task.completedAt.toISOString() : null,
-      deadline: task.deadline ? task.deadline.toISOString() : null,
-      date: task.date,
-      user_id: userId,
-    }));
-
-    if (tasksToInsert.length === 0) return;
-
-    const { error } = await supabase.from("tasks").insert(tasksToInsert);
-
-    if (error) {
-      console.error("Error migrating tasks:", error);
-      throw error;
-    }
-  } catch (error) {
-    console.error("Error in migrateLocalTasks:", error);
-    throw error;
-  }
-};
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 </file>
 
 <file path="src/middleware.ts">
@@ -1527,6 +1019,168 @@ CREATE POLICY "Users can update their own profile"
 CREATE INDEX IF NOT EXISTS tasks_user_id_idx ON public.tasks (user_id);
 CREATE INDEX IF NOT EXISTS tasks_date_idx ON public.tasks (date);
 CREATE INDEX IF NOT EXISTS tasks_completed_idx ON public.tasks (completed);
+</file>
+
+<file path="code-review-plan.md">
+# LLM Code Generation Plan: Implementing Critical Joytask Code Review Recommendations (v2)
+
+**Goal:** Refactor the Joytask codebase to address _critical outstanding issues_ identified during code review, focusing primarily on data integrity, robustness, error handling, and consistency. **This plan prioritizes fixes that were not implemented in the previous update.**
+
+---
+
+## Checklist
+
+- [x] **Step 1: CRITICAL FIX - Remove Risky Task Deletion Logic**
+- [x] **Step 2: Implement Robust Task Migration Handling**
+  - [x] 2.1 Modify `migrateLocalTasks` return type and logic (`taskService.ts`)
+  - [x] 2.2 Update `useEffect` in `page.tsx` to use boolean return and add toast on failure
+- [x] **Step 3: Standardize Date Filtering in Calendar**
+- [x] **Step 4: Ensure Clean Error Propagation from Task Service**
+- [ ] **Step 5: Implement User Feedback for Operations Failures**
+  - [ ] 5.1 Import and initialize `useToast` in `page.tsx`
+  - [ ] 5.2 Add `showToast` calls in `catch` blocks (`addTask`, `toggleTaskCompletion`, `deleteTask`, load effect)
+- [ ] **Step 6: Add Safety Wrappers for `localStorage` Access**
+  - [ ] 6.1 Wrap `localStorage` calls in `page.tsx` (`setItem`, `getItem`, `removeItem`)
+  - [ ] 6.2 Wrap `localStorage` calls in `AuthContext.tsx` (`removeItem`)
+- [ ] **Step 7: Add Explanatory Code Comments**
+- [ ] **Step 8: Final Reminder (For Human Reviewer)**
+
+---
+
+## Step 1: CRITICAL FIX - Remove Risky Task Deletion Logic
+
+- **File:** `src/app/page.tsx`
+- **Context:** Inside the main `useEffect` hook responsible for loading tasks (specifically the `if (user)` block). Locate the conditional block starting around line `L61`: `if (isNewLoginSession && isNewUser && userTasks.length > 0)`.
+- **Instruction:**
+  1.  **DELETE** the entire `for...of` loop within this `if` block (approximately lines L65-L71) that iterates through `userTasks` and calls `await deleteTaskFromDb(task.id)`.
+  2.  **DELETE** the `setTasks([]);` line immediately following that loop (approximately line L72).
+  3.  **DELETE** the `return;` statement immediately following that (approximately line L73).
+  4.  **Keep** the `console.log` message for now, but ensure the destructive actions (deleting from DB, clearing state) are removed. The check itself might be useful for debugging later, but the deletion action is too risky.
+- **Why:** Prevents accidental deletion of legitimate user data from Supabase simply due to login timing or migration status flags. This is the highest priority data integrity fix.
+
+---
+
+## Step 2: Implement Robust Task Migration Handling
+
+- **File 1:** `src/lib/taskService.ts`
+- **Context:** The `migrateLocalTasks` function (starting around line `L118`).
+- **Instruction 1 (Checklist Item 2.1):**
+  1.  Change the function signature from `Promise<void>` to `Promise<boolean>`.
+  2.  Inside the `try` block:
+      - If `tasksToInsert.length === 0`, add `return true;` before the `supabase.from("tasks").insert` call (as no migration was needed).
+      - After the `supabase.from("tasks").insert` call, check if `error` is null. If it is, add `return true;`.
+  3.  Inside the `catch` block, before re-throwing the error, add `return false;`.
+- **File 2:** `src/app/page.tsx`
+- **Context:** Inside the task loading `useEffect`, locate the block handling migration (approximately lines `L77-L91`).
+- **Instruction 2 (Checklist Item 2.2):**
+  1.  Modify the call: `const migrationSuccess = await migrateLocalTasks(user.id, formattedLocalTasks);`
+  2.  Wrap the lines `localStorage.removeItem("tasks");`, `setHasMigratedTasks(true);`, and `localStorage.setItem(migrated_{user.id}, "true");` (approx L86-L88) inside an `if (migrationSuccess)` block.
+  3.  Add an `else { ... }` block after the `if (migrationSuccess)`. Inside this `else` block:
+      - Import `useToast` hook: `import { useToast } from "@/context/ToastContext";` at the top of the file.
+      - Initialize the hook inside the `Home` component: `const { showToast } = useToast();`
+      - Call `showToast("Task migration from local storage failed. Please reload or contact support if issue persists.", "error");`
+- **Why:** Ensures the migration process is reliably tracked, prevents incorrect flag setting on failure, and provides user feedback if migration doesn't complete successfully.
+
+---
+
+## Step 3: Standardize Date Filtering in Calendar
+
+- **File:** `src/components/Calendar.tsx`
+- **Context:** The `getTasksForDay` function (starting around line `L75`).
+- **Instruction:**
+  1.  **Replace** the current `filter` logic (which checks `task.deadline` first with `isSameDay`) with a simpler, standardized logic:
+      ```javascript
+      // Standardized filter: Use the 'date' field (YYYY-MM-DD string) directly.
+      return tasks.filter((task) => task.date === dateString);
+      ```
+  2.  **Remove** the `try...catch` block previously surrounding the `isSameDay` call, as it's no longer needed with the direct string comparison.
+- **Why:** Enforces consistent task filtering based on the `task.date` field across Day view and Calendar view, matching the assignment logic in `TaskForm`.
+
+---
+
+## Step 4: Ensure Clean Error Propagation from Task Service
+
+- **File:** `src/lib/taskService.ts`
+- **Context:** All exported async functions (`getTasks`, `addTask`, `toggleTaskCompletion`, `deleteTask`, `migrateLocalTasks`).
+- **Instruction:** Review each function's `catch` block. Ensure that after `console.error`, the original `error` is **re-thrown** using `throw error;`. This allows the UI layer to catch and handle it specifically. (Note: `migrateLocalTasks` now returns `false` on error as per Step 2, but should still log the error and re-throw if necessary for deeper debugging if the boolean isn't sufficient).
+- **Why:** Makes service layer errors visible and actionable in the calling UI code.
+
+---
+
+## Step 5: Implement User Feedback for Operations Failures
+
+- **File:** `src/app/page.tsx`
+- **Context:** The `catch` blocks within `addTask`, `toggleTaskCompletion`, `deleteTask`, and the main task loading `useEffect`.
+- **Instruction:**
+  1.  Ensure `useToast` is imported and initialized (`const { showToast } = useToast();`). (**Checklist Item 5.1**)
+  2.  In the `catch` block for `addTask` (around L163): Add `showToast("Error: Failed to add task.", "error");`. (**Checklist Item 5.2**)
+  3.  In the `catch` block for `toggleTaskCompletion` (around L183): Add `showToast("Error: Failed to update task status.", "error");` (before reverting state). (**Checklist Item 5.2**)
+  4.  In the `catch` block for `deleteTask` (around L199): Add `showToast("Error: Failed to delete task.", "error");` (before reverting state). (**Checklist Item 5.2**)
+  5.  In the `catch` block for the main task loading `useEffect` (around L124): Add `showToast("Error: Failed to load tasks.", "error");`. (**Checklist Item 5.2**)
+- **Why:** Informs the user clearly when backend operations fail, instead of failing silently or only logging to the console.
+
+---
+
+## Step 6: Add Safety Wrappers for `localStorage` Access
+
+- **File 1:** `src/app/page.tsx`
+- **Context:**
+  - The `useEffect` saving tasks (around L136-L144).
+  - The `useEffect` loading tasks when `!user` (around L111-L126).
+  - The `useEffect` loading tasks when `user` (around L59, L86, L90).
+- **Instruction 1 (Checklist Item 6.1):**
+  - Wrap `localStorage.setItem("tasks", JSON.stringify(tasks));` (approx L140) in a `try...catch(e) { console.error("Failed to save tasks to localStorage:", e); }`.
+  - Wrap `localStorage.getItem("tasks")` and `JSON.parse(savedTasks)` (approx L113-L115) in a single outer `try...catch(e) { console.error("Failed to load tasks from localStorage:", e); setTasks([]); }`.
+  - Wrap `localStorage.getItem("last_login_user_id")` (approx L56) in a `try...catch`. Log error on failure. If it fails, perhaps default `isNewLoginSession` to `true` or handle appropriately.
+  - Wrap `localStorage.setItem("last_login_user_id", user.id);` (approx L59) in `try...catch`. Log error.
+  - Wrap `localStorage.removeItem("tasks");` (approx L86 - _now inside `if(migrationSuccess)`_) in `try...catch`. Log error.
+  - Wrap `localStorage.setItem(migrated_{user.id}, "true");` (approx L88 - _now inside `if(migrationSuccess)`_) in `try...catch`. Log error.
+- **File 2:** `src/context/AuthContext.tsx`
+- **Context:** The `signOut` function (starting around line `L72`).
+- **Instruction 2 (Checklist Item 6.2):** Wrap `localStorage.removeItem("tasks");` and `localStorage.removeItem("last_login_user_id");` (approx L81-L83) inside individual `try...catch(e) { console.error("Failed to remove item from localStorage during sign out:", e); }` blocks.
+- **Why:** Prevents errors and potential app crashes if `localStorage` is unavailable or fails, making the app more resilient.
+
+---
+
+## Step 7: Add Explanatory Code Comments
+
+- **Files:** `src/app/page.tsx`, `src/components/TaskForm.tsx`
+- **Instruction:** Add comments explaining the _purpose_ of:
+  - The modified logic within the task loading/migration `useEffect` in `page.tsx` (explaining the migration flag check, why deletion was removed, etc.).
+  - The deadline and `taskDate` assignment logic in `TaskForm.tsx`'s `handleSubmit`, confirming `taskDate` uses the deadline's date if available.
+- **Why:** Improves code clarity and maintainability.
+
+---
+
+## Step 8: Final Reminder (For Human Reviewer)
+
+- **Instruction:** Include a final note in the output: "Reminder: These changes address critical robustness issues. Further work should include comprehensive testing (unit/integration), a full accessibility review, and potential state management refactoring for scalability."
+
+---
+</file>
+
+<file path="components.json">
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.js",
+    "css": "src/app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
+}
 </file>
 
 <file path="postcss.config.js">
@@ -1735,6 +1389,541 @@ You can set up the database tables in two ways:
 }
 </file>
 
+<file path="src/components/auth/UserProfile.tsx">
+import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
+
+export default function UserProfile() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="animate-pulse h-8 w-8 bg-gray-200 rounded-full"></div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const avatarUrl = user.user_metadata?.avatar_url;
+  const name = user.user_metadata?.full_name || user.email || "User";
+
+  return (
+    <div className="flex items-center space-x-2">
+      {avatarUrl ? (
+        <div className="relative h-8 w-8 rounded-full overflow-hidden">
+          <Image
+            src={avatarUrl}
+            alt={`${name}'s avatar`}
+            fill
+            className="object-cover"
+          />
+        </div>
+      ) : (
+        <div className="h-8 w-8 bg-primary text-white rounded-full flex items-center justify-center">
+          {name.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <span className="hidden sm:inline text-sm font-medium">{name}</span>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/ui/BarChart.tsx">
+import React from "react";
+
+// Remove empty extending interface
+// interface BarChartProps extends React.SVGProps<SVGSVGElement> {}
+
+// Use the base SVGProps type directly
+export const BarChart: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <line x1="12" y1="20" x2="12" y2="10" />
+      <line x1="18" y1="20" x2="18" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="16" />
+    </svg>
+  );
+};
+</file>
+
+<file path="src/components/ui/CelebrationEffect.tsx">
+"use client";
+
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import confetti from "canvas-confetti";
+
+interface CelebrationEffectProps {
+  show: boolean;
+  onComplete?: () => void;
+}
+
+const CelebrationEffect: React.FC<CelebrationEffectProps> = ({
+  show,
+  onComplete,
+}) => {
+  useEffect(() => {
+    if (show) {
+      // Fire confetti
+      const duration = 2000;
+      const end = Date.now() + duration;
+
+      const colors = ["#00FF00", "#7CFC00", "#32CD32", "#98FB98", "#28A745"];
+
+      (function frame() {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors,
+        });
+
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        } else if (onComplete) {
+          setTimeout(() => {
+            onComplete();
+          }, 200);
+        }
+      })();
+    }
+  }, [show, onComplete]);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-green-100 text-green-800 font-bold text-xl p-4 rounded-lg shadow-lg"
+      >
+        <span role="img" aria-label="Celebration">
+          🎉
+        </span>{" "}
+        Task Completed!{" "}
+        <span role="img" aria-label="Celebration">
+          🎊
+        </span>
+      </motion.div>
+    </div>
+  );
+};
+
+export default CelebrationEffect;
+</file>
+
+<file path="src/components/ui/CheckCircle.tsx">
+import React from "react";
+
+export const CheckCircle: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
+  );
+};
+</file>
+
+<file path="src/components/ui/Circle.tsx">
+import React from "react";
+
+// Remove empty extending interface
+// interface CircleProps extends React.SVGProps<SVGSVGElement> {}
+
+// Use the base SVGProps type directly
+export const Circle: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="10" />
+    </svg>
+  );
+};
+</file>
+
+<file path="src/components/DaySummary.tsx">
+"use client";
+
+import { DaySummaryProps } from "@/lib/types";
+import { format, parseISO } from "date-fns";
+
+const DaySummary: React.FC<DaySummaryProps> = ({
+  date,
+  tasks,
+  onViewDetails,
+}) => {
+  // Format the date for display
+  const formattedDate = format(parseISO(date), "EEEE, MMMM d, yyyy");
+
+  // Calculate task statistics
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((task) => task.completed).length;
+  const pendingTasks = totalTasks - completedTasks;
+
+  return (
+    <div className="p-4 pt-0">
+      <h3 className="text-xl font-semibold mb-4">{formattedDate}</h3>
+
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-gray-50 p-3 rounded-lg text-center">
+          <p className="text-2xl font-bold text-gray-700">{totalTasks}</p>
+          <p className="text-xs text-gray-600">Total Tasks</p>
+        </div>
+
+        <div className="bg-green-50 p-3 rounded-lg text-center">
+          <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
+          <p className="text-xs text-gray-600">Completed</p>
+        </div>
+
+        <div className="bg-yellow-50 p-3 rounded-lg text-center">
+          <p className="text-2xl font-bold text-yellow-600">{pendingTasks}</p>
+          <p className="text-xs text-gray-600">Pending</p>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">Tasks:</h4>
+
+        {tasks.length === 0 ? (
+          <p className="text-gray-500 text-sm">No tasks for this day.</p>
+        ) : (
+          <div className="max-h-60 overflow-y-auto pr-2">
+            <ul className="space-y-2">
+              {tasks.map((task) => (
+                <li key={task.id} className="flex items-center gap-2 text-sm">
+                  <span
+                    className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                      task.completed ? "bg-green-500" : "bg-yellow-500"
+                    }`}
+                  ></span>
+                  <span
+                    className={`${
+                      task.completed
+                        ? "line-through text-gray-500"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {task.title}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={onViewDetails}
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+        >
+          View Details
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default DaySummary;
+</file>
+
+<file path="src/components/LandingPage.tsx">
+import { useAuth } from "@/context/AuthContext";
+import LoginButton from "./auth/LoginButton";
+import { CheckCircle } from "./ui/CheckCircle";
+
+export default function WelcomeScreen() {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b to-slate-50 flex flex-col items-center justify-center px-4 py-12">
+      <div className="max-w-6xl w-full grid md:grid-cols-2 gap-12 items-center">
+        {/* Left Column - Hero Section */}
+        <div className="flex flex-col space-y-6 order-1 md:order-1">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-primary">
+              Joytask
+            </h1>
+            <p className="text-xl md:text-2xl text-slate-700 mt-2 font-light">
+              Celebrate every completed task
+            </p>
+          </div>
+
+          <p className="text-slate-600 text-lg">
+            A task management app that helps you stay organized and turns
+            productivity into moments of joy.
+          </p>
+
+          <div className="mt-4">
+            <LoginButton />
+          </div>
+
+          <p className="text-sm text-slate-500 mt-2">
+            Your data is securely stored and only accessible to you.
+          </p>
+        </div>
+
+        {/* Right Column - Features */}
+        <div className="bg-white rounded-xl shadow-lg p-8 border border-slate-100 order-2 md:order-2">
+          <h3 className="text-xl font-semibold mb-5 text-primary">
+            Why Joytask?
+          </h3>
+
+          <div className="space-y-5">
+            <FeatureItem
+              title="Celebrate Achievements"
+              description="Experience delightful animations when you complete tasks"
+            />
+
+            <FeatureItem
+              title="Intuitive Organization"
+              description="View your tasks in daily or calendar format"
+            />
+
+            <FeatureItem
+              title="Deadline Management"
+              description="Set deadlines and never miss important tasks"
+            />
+
+            <FeatureItem
+              title="Access Anywhere"
+              description="Cloud sync keeps your tasks available on all devices"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface FeatureItemProps {
+  title: string;
+  description: string;
+}
+
+function FeatureItem({ title, description }: FeatureItemProps) {
+  return (
+    <div className="flex items-start space-x-3">
+      <div className="mt-1 text-green-500 flex-shrink-0">
+        <CheckCircle className="h-5 w-5" />
+      </div>
+      <div>
+        <h4 className="font-medium text-slate-800">{title}</h4>
+        <p className="text-slate-600 text-sm mt-1">{description}</p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/Stats.tsx">
+"use client";
+
+import { StatsProps } from "@/lib/types";
+import { useEffect, useState } from "react";
+
+const Stats: React.FC<StatsProps> = ({ stats }) => {
+  // Use state to handle client-side rendering
+  const [isClient, setIsClient] = useState(false);
+  const [circleValues, setCircleValues] = useState({
+    circumference: 0,
+    offset: 0,
+  });
+  const [percentage, setPercentage] = useState(0);
+
+  // Set up client-side calculations after component mounts
+  useEffect(() => {
+    // Calculate completion percentage for the circular progress based on the current day's tasks
+    const totalTasksForDay = stats.completedToday + stats.totalActive;
+    const completionPercentage =
+      totalTasksForDay > 0
+        ? Math.round((stats.completedToday / totalTasksForDay) * 100)
+        : 0;
+
+    // Calculate the stroke-dasharray and stroke-dashoffset for the SVG circle
+    const radius = 40;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (completionPercentage / 100) * circumference;
+
+    setCircleValues({ circumference, offset });
+    setPercentage(completionPercentage);
+    setIsClient(true);
+  }, [stats.completedToday, stats.totalActive]);
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="stats-card bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+        <p className="text-3xl font-bold text-primary">
+          {isClient ? stats.completedToday : "0"}
+        </p>
+        <p className="text-sm text-gray-600">Completed Today</p>
+      </div>
+
+      <div className="stats-card bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+        <p className="text-3xl font-bold text-secondary">
+          {isClient ? stats.totalActive : "0"}
+        </p>
+        <p className="text-sm text-gray-600">Active Tasks</p>
+      </div>
+
+      <div className="stats-card bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center flex flex-col items-center justify-center">
+        <div className="relative w-20 h-20">
+          {isClient ? (
+            <svg className="w-full h-full" viewBox="0 0 100 100">
+              {/* Background circle */}
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="#e6e6e6"
+                strokeWidth="10"
+              />
+              {/* Progress circle */}
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="#6366f1"
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeDasharray={circleValues.circumference}
+                strokeDashoffset={circleValues.offset}
+                transform="rotate(-90 50 50)"
+              />
+              {/* Percentage text */}
+              <text
+                x="50"
+                y="55"
+                textAnchor="middle"
+                fontSize="20"
+                fontWeight="bold"
+                fill="#6366f1"
+              >
+                {`${percentage}%`}
+              </text>
+            </svg>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full border-8 border-gray-200"></div>
+            </div>
+          )}
+        </div>
+        <p className="text-sm text-gray-600 mt-2">Completion Rate</p>
+      </div>
+    </div>
+  );
+};
+
+export default Stats;
+</file>
+
+<file path=".eslintrc.json">
+{
+  "extends": ["next/core-web-vitals", "next/typescript"]
+}
+</file>
+
+<file path=".gitignore">
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="next.config.js">
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  images: {
+    domains: ["lh3.googleusercontent.com"],
+  },
+};
+
+module.exports = nextConfig;
+</file>
+
 <file path="src/app/globals.css">
 @tailwind base;
 @tailwind components;
@@ -1887,274 +2076,6 @@ body {
 }
 </file>
 
-<file path="src/components/Calendar.tsx">
-"use client";
-
-import { useState } from "react";
-import { CalendarProps, Task, DayStats } from "@/lib/types";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameMonth,
-  isToday,
-  addMonths,
-  subMonths,
-  parseISO,
-  isSameDay,
-} from "date-fns";
-import CalendarDay from "./CalendarDay";
-import DaySummary from "./DaySummary";
-
-const Calendar: React.FC<CalendarProps> = ({
-  tasks,
-  selectedMonth,
-  onMonthChange,
-  onDayClick,
-}) => {
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-
-  // Get days in the current month view
-  const monthStart = startOfMonth(selectedMonth);
-  const monthEnd = endOfMonth(selectedMonth);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-  // Get the day of the week for the first day of the month (0-6, where 0 is Sunday)
-  const startDay = monthStart.getDay();
-
-  // Calculate days from previous month to display
-  const daysFromPrevMonth = Array.from({ length: startDay }, (_, i) => {
-    const day = new Date(monthStart);
-    day.setDate(day.getDate() - (startDay - i));
-    return day;
-  });
-
-  // Calculate days from next month to display (to fill a 6-row grid)
-  const totalDaysToShow = 42; // 6 rows of 7 days
-  const daysFromNextMonth = Array.from(
-    { length: totalDaysToShow - daysInMonth.length - daysFromPrevMonth.length },
-    (_, i) => {
-      const day = new Date(monthEnd);
-      day.setDate(day.getDate() + i + 1);
-      return day;
-    }
-  );
-
-  // Combine all days
-  const allDays = [...daysFromPrevMonth, ...daysInMonth, ...daysFromNextMonth];
-
-  // Navigate to previous month
-  const goToPreviousMonth = () => {
-    onMonthChange(subMonths(selectedMonth, 1));
-  };
-
-  // Navigate to next month
-  const goToNextMonth = () => {
-    onMonthChange(addMonths(selectedMonth, 1));
-  };
-
-  // Navigate to current month
-  const goToCurrentMonth = () => {
-    onMonthChange(new Date());
-  };
-
-  // Handle day click
-  const handleDayClick = (date: string) => {
-    setSelectedDate(date);
-  };
-
-  // Close the day summary modal
-  const closeDaySummary = () => {
-    setSelectedDate(null);
-  };
-
-  // View day details
-  const viewDayDetails = () => {
-    if (selectedDate) {
-      onDayClick(selectedDate);
-      setSelectedDate(null);
-    }
-  };
-
-  // Get tasks for a specific day
-  const getTasksForDay = (date: Date): Task[] => {
-    const dateString = format(date, "yyyy-MM-dd");
-
-    // Only include tasks that have a deadline on this date
-    return tasks.filter((task) => {
-      if (task.deadline) {
-        // If the task has a deadline, check if it falls on this date
-        try {
-          return isSameDay(new Date(task.deadline), date);
-        } catch (error) {
-          console.error("Error comparing dates:", error);
-          return false;
-        }
-      }
-
-      // For backward compatibility, include tasks without deadlines that were created on this date
-      return task.date === dateString;
-    });
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={goToPreviousMonth}
-          className="p-2 rounded-full hover:bg-gray-100"
-          aria-label="Previous month"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">
-            {format(selectedMonth, "MMMM yyyy")}
-          </h2>
-          {!isSameMonth(selectedMonth, new Date()) && (
-            <button
-              onClick={goToCurrentMonth}
-              className="text-sm text-primary hover:underline"
-            >
-              Go to Current Month
-            </button>
-          )}
-        </div>
-
-        <button
-          onClick={goToNextMonth}
-          className="p-2 rounded-full hover:bg-gray-100"
-          aria-label="Next month"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
-        {/* Day headers */}
-        {[
-          { short: "S", long: "Sun" },
-          { short: "M", long: "Mon" },
-          { short: "T", long: "Tue" },
-          { short: "W", long: "Wed" },
-          { short: "T", long: "Thu" },
-          { short: "F", long: "Fri" },
-          { short: "S", long: "Sat" },
-        ].map((day) => (
-          <div
-            key={day.long}
-            className="bg-gray-100 p-2 text-center text-sm font-medium text-gray-700"
-          >
-            <span className="hidden sm:inline">{day.long}</span>
-            <span className="sm:hidden">{day.short}</span>
-          </div>
-        ))}
-
-        {/* Calendar days */}
-        {allDays.map((day) => {
-          const dateString = format(day, "yyyy-MM-dd");
-          const dayTasks = getTasksForDay(day);
-
-          return (
-            <CalendarDay
-              key={dateString}
-              date={dateString}
-              tasks={dayTasks}
-              isCurrentMonth={isSameMonth(day, selectedMonth)}
-              isToday={isToday(day)}
-              onClick={() => handleDayClick(dateString)}
-            />
-          );
-        })}
-      </div>
-
-      {/* Day summary modal */}
-      {selectedDate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto my-8 flex flex-col max-h-[90vh]">
-            <div className="sticky top-0 bg-white z-10 flex justify-end p-2">
-              <button
-                onClick={closeDaySummary}
-                className="text-gray-500 hover:text-gray-700 p-1"
-                aria-label="Close"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="overflow-y-auto flex-grow">
-              <DaySummary
-                date={selectedDate}
-                tasks={tasks.filter((task) => {
-                  if (task.deadline) {
-                    // If the task has a deadline, check if it falls on this date
-                    try {
-                      return isSameDay(
-                        new Date(task.deadline),
-                        parseISO(selectedDate)
-                      );
-                    } catch (error) {
-                      console.error("Error comparing dates:", error);
-                      return false;
-                    }
-                  }
-
-                  // For backward compatibility, include tasks without deadlines that were created on this date
-                  return task.date === selectedDate;
-                })}
-                onViewDetails={viewDayDetails}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default Calendar;
-</file>
-
 <file path="src/components/CalendarDay.tsx">
 "use client";
 
@@ -2247,595 +2168,407 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
 export default CalendarDay;
 </file>
 
-<file path="src/components/DayDetail.tsx">
+<file path="src/components/TaskForm.tsx">
 "use client";
 
 import { useState } from "react";
-import { Task } from "@/lib/types";
-import TaskForm from "./TaskForm";
-import TaskList from "./TaskList";
-import { format, addDays, subDays, parseISO, isSameDay } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { TaskFormProps } from "@/lib/types";
+import { format, parseISO, setHours, setMinutes, setSeconds } from "date-fns";
 
-interface DayDetailProps {
-  date: string;
-  tasks: Task[];
-  onDateChange: (date: string) => void;
-  onAddTask: (title: string, date: string, deadline?: Date) => void;
-  onToggleCompletion: (id: string) => void;
-  onDeleteTask: (id: string) => void;
-}
+const TaskForm: React.FC<TaskFormProps> = ({ onAddTask, selectedDate }) => {
+  const [title, setTitle] = useState("");
+  const [deadlineDate, setDeadlineDate] = useState("");
+  const [deadlineTime, setDeadlineTime] = useState("");
+  const [showDeadline, setShowDeadline] = useState(false);
 
-const DayDetail: React.FC<DayDetailProps> = ({
-  date,
-  tasks,
-  onDateChange,
-  onAddTask,
-  onToggleCompletion,
-  onDeleteTask,
-}) => {
-  const [showTaskForm, setShowTaskForm] = useState(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // Filter tasks for the selected date
-  const dayTasks = tasks.filter((task) => {
-    try {
-      // Match task date with the selected date string 'yyyy-MM-dd'
-      return task.date === date;
-    } catch (error) {
-      console.error("Error filtering task by date:", error, task);
-      return false;
+    if (title.trim()) {
+      let finalDeadline;
+      let taskDate = selectedDate; // Default to the selected date
+
+      if (deadlineDate) {
+        try {
+          // Create a date object from the deadline date
+          const dateObj = new Date(deadlineDate);
+
+          // If time is provided, set it; otherwise, set to end of day (23:59:59)
+          if (deadlineTime) {
+            const [hours, minutes] = deadlineTime.split(":").map(Number);
+            finalDeadline = setHours(setMinutes(dateObj, minutes), hours);
+          } else {
+            finalDeadline = setHours(
+              setMinutes(setSeconds(dateObj, 59), 59),
+              23
+            );
+          }
+
+          // Ensure the date is valid
+          if (isNaN(finalDeadline.getTime())) {
+            console.error("Invalid date created:", finalDeadline);
+            finalDeadline = undefined;
+          } else {
+            // Use the deadline date as the task date (YYYY-MM-DD format)
+            taskDate = format(finalDeadline, "yyyy-MM-dd");
+          }
+        } catch (error) {
+          console.error("Error creating deadline date:", error);
+          finalDeadline = undefined;
+        }
+      }
+
+      onAddTask(title.trim(), taskDate, finalDeadline);
+
+      // Reset form
+      setTitle("");
+      setDeadlineDate("");
+      setDeadlineTime("");
+      setShowDeadline(false);
     }
-  });
-
-  // Calculate stats (moved to main page, keeping filtering logic here)
-  const activeTasks = dayTasks.filter((task) => !task.completed);
-  const completedTasks = dayTasks.filter((task) => task.completed);
-
-  // Navigate to previous day
-  const goToPreviousDay = () => {
-    const newDate = format(subDays(parseISO(date), 1), "yyyy-MM-dd");
-    onDateChange(newDate);
   };
 
-  // Navigate to next day
-  const goToNextDay = () => {
-    const newDate = format(addDays(parseISO(date), 1), "yyyy-MM-dd");
-    onDateChange(newDate);
-  };
-
-  // Format the date for display (Day Name and Full Date)
-  const displayDay = format(parseISO(date), "EEEE");
-  const displayDate = format(parseISO(date), "MMMM d, yyyy");
-
-  // Handle adding a task and closing the modal
-  const handleAddTask = (title: string, date: string, deadline?: Date) => {
-    onAddTask(title, date, deadline);
-    setShowTaskForm(false);
-  };
+  // Format the selected date for display
+  const formattedDate = format(parseISO(selectedDate), "EEEE, MMMM d");
 
   return (
-    <div className="space-y-6">
-      {/* Date Navigation */}
-      <div className="flex items-center justify-center space-x-4 mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={goToPreviousDay}
-          aria-label="Previous day"
-        >
-          <ChevronLeft className="h-5 w-5 text-gray-600" />
-        </Button>
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-700">{displayDay}</h2>
-          <p className="text-sm text-gray-500">{displayDate}</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={goToNextDay}
-          aria-label="Next day"
-        >
-          <ChevronRight className="h-5 w-5 text-gray-600" />
-        </Button>
-      </div>
+    <div>
+      <p className="text-sm text-gray-600 mb-4">for {formattedDate}</p>
 
-      {/* Active Tasks Section */}
-      <div className="active-tasks-section">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Active Tasks</h3>
-          <Button onClick={() => setShowTaskForm(true)} size="sm">
-            <Plus className="mr-2 h-4 w-4" /> Add Task
-          </Button>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="What needs to be done?"
+            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+            autoFocus
+          />
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          {activeTasks.length > 0 ? (
-            <TaskList
-              tasks={activeTasks}
-              onToggleCompletion={onToggleCompletion}
-              onDeleteTask={onDeleteTask}
-              currentDate={date}
-            />
-          ) : (
-            <p className="text-center text-gray-500 py-4">
-              No active tasks for today. Add a new task to get started!
-            </p>
-          )}
-        </div>
-      </div>
 
-      {/* Completed Tasks Section */}
-      <div className="completed-tasks-section">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Completed Tasks
-        </h3>
-        <div className="bg-white rounded-lg shadow p-4">
-          {completedTasks.length > 0 ? (
-            <TaskList
-              tasks={completedTasks}
-              onToggleCompletion={onToggleCompletion}
-              onDeleteTask={onDeleteTask}
-              isCompletedList={true}
-              currentDate={date}
-            />
-          ) : (
-            <p className="text-center text-gray-500 py-4">
-              No completed tasks for today
-            </p>
-          )}
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => setShowDeadline(!showDeadline)}
+            className="text-sm text-primary flex items-center"
+          >
+            {showDeadline ? "Hide deadline" : "Add deadline"}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 ml-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </button>
         </div>
-      </div>
 
-      {/* Task Form Modal (Styling adjustments might be needed in TaskForm itself) */}
-      {showTaskForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Add New Task</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowTaskForm(false)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </Button>
+        {showDeadline && (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Deadline Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={deadlineDate}
+                onChange={(e) => setDeadlineDate(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                required
+              />
             </div>
-            <div className="p-4">
-              <TaskForm onAddTask={handleAddTask} selectedDate={date} />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Time (optional)
+              </label>
+              <input
+                type="time"
+                value={deadlineTime}
+                onChange={(e) => setDeadlineTime(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                If no time is selected, deadline will be set to end of day
+                (11:59 PM)
+              </p>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default DayDetail;
-</file>
-
-<file path="src/components/DaySummary.tsx">
-"use client";
-
-import { DaySummaryProps } from "@/lib/types";
-import { format, parseISO } from "date-fns";
-
-const DaySummary: React.FC<DaySummaryProps> = ({
-  date,
-  tasks,
-  onViewDetails,
-}) => {
-  // Format the date for display
-  const formattedDate = format(parseISO(date), "EEEE, MMMM d, yyyy");
-
-  // Calculate task statistics
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => task.completed).length;
-  const pendingTasks = totalTasks - completedTasks;
-
-  return (
-    <div className="p-4 pt-0">
-      <h3 className="text-xl font-semibold mb-4">{formattedDate}</h3>
-
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-gray-50 p-3 rounded-lg text-center">
-          <p className="text-2xl font-bold text-gray-700">{totalTasks}</p>
-          <p className="text-xs text-gray-600">Total Tasks</p>
-        </div>
-
-        <div className="bg-green-50 p-3 rounded-lg text-center">
-          <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
-          <p className="text-xs text-gray-600">Completed</p>
-        </div>
-
-        <div className="bg-yellow-50 p-3 rounded-lg text-center">
-          <p className="text-2xl font-bold text-yellow-600">{pendingTasks}</p>
-          <p className="text-xs text-gray-600">Pending</p>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">Tasks:</h4>
-
-        {tasks.length === 0 ? (
-          <p className="text-gray-500 text-sm">No tasks for this day.</p>
-        ) : (
-          <div className="max-h-60 overflow-y-auto pr-2">
-            <ul className="space-y-2">
-              {tasks.map((task) => (
-                <li key={task.id} className="flex items-center gap-2 text-sm">
-                  <span
-                    className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                      task.completed ? "bg-green-500" : "bg-yellow-500"
-                    }`}
-                  ></span>
-                  <span
-                    className={`${
-                      task.completed
-                        ? "line-through text-gray-500"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {task.title}
-                  </span>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
-      </div>
 
-      <div className="flex justify-end">
-        <button
-          onClick={onViewDetails}
-          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-        >
-          View Details
-        </button>
-      </div>
+        <div>
+          <button type="submit" className="btn btn-primary w-full">
+            Add Task
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
 
-export default DaySummary;
+export default TaskForm;
 </file>
 
-<file path="src/components/Navigation.tsx">
-"use client";
+<file path="src/lib/taskService.ts">
+import { supabase } from "./supabase";
+import { Task } from "./types";
 
-import { NavigationProps } from "@/lib/types";
-import Link from "next/link";
-import LoginButton from "./auth/LoginButton";
-import UserProfile from "./auth/UserProfile";
-import { useAuth } from "@/context/AuthContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+// Get all tasks for a user
+export const getTasks = async (userId: string): Promise<Task[]> => {
+  try {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", userId);
 
-const Navigation: React.FC<NavigationProps> = ({
-  currentView,
-  onViewChange,
-}) => {
-  const { user, signOut } = useAuth();
+    if (error) {
+      console.error("Error fetching tasks:", error);
+      throw error;
+    }
 
-  return (
-    <nav className="bg-white shadow-sm mb-8 rounded-lg">
-      <div className="flex justify-between items-center p-2">
-        <div className="flex space-x-1 p-1">
-          <button
-            onClick={() => onViewChange("day")}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              currentView === "day"
-                ? "bg-primary text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            Day View
-          </button>
-          <button
-            onClick={() => onViewChange("calendar")}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              currentView === "calendar"
-                ? "bg-primary text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            Calendar
-          </button>
-        </div>
-        <div className="flex items-center space-x-4">
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="focus:outline-none rounded-full p-1 hover:bg-gray-100 transition-colors"
-                  aria-label="User menu"
-                >
-                  <UserProfile />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => signOut()}
-                  className="text-red-500 cursor-pointer"
-                >
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <LoginButton />
-          )}
-        </div>
-      </div>
-    </nav>
-  );
-};
+    if (!data) {
+      return [];
+    }
 
-export default Navigation;
-</file>
-
-<file path="src/components/Stats.tsx">
-"use client";
-
-import { StatsProps } from "@/lib/types";
-import { useEffect, useState } from "react";
-
-const Stats: React.FC<StatsProps> = ({ stats }) => {
-  // Use state to handle client-side rendering
-  const [isClient, setIsClient] = useState(false);
-  const [circleValues, setCircleValues] = useState({
-    circumference: 0,
-    offset: 0,
-  });
-  const [percentage, setPercentage] = useState(0);
-
-  // Set up client-side calculations after component mounts
-  useEffect(() => {
-    // Calculate completion percentage for the circular progress based on the current day's tasks
-    const totalTasksForDay = stats.completedToday + stats.totalActive;
-    const completionPercentage =
-      totalTasksForDay > 0
-        ? Math.round((stats.completedToday / totalTasksForDay) * 100)
-        : 0;
-
-    // Calculate the stroke-dasharray and stroke-dashoffset for the SVG circle
-    const radius = 40;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (completionPercentage / 100) * circumference;
-
-    setCircleValues({ circumference, offset });
-    setPercentage(completionPercentage);
-    setIsClient(true);
-  }, [stats.completedToday, stats.totalActive]);
-
-  return (
-    <div className="grid grid-cols-3 gap-4">
-      <div className="stats-card bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
-        <p className="text-3xl font-bold text-primary">
-          {isClient ? stats.completedToday : "0"}
-        </p>
-        <p className="text-sm text-gray-600">Completed Today</p>
-      </div>
-
-      <div className="stats-card bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
-        <p className="text-3xl font-bold text-secondary">
-          {isClient ? stats.totalActive : "0"}
-        </p>
-        <p className="text-sm text-gray-600">Active Tasks</p>
-      </div>
-
-      <div className="stats-card bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center flex flex-col items-center justify-center">
-        <div className="relative w-20 h-20">
-          {isClient ? (
-            <svg className="w-full h-full" viewBox="0 0 100 100">
-              {/* Background circle */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="#e6e6e6"
-                strokeWidth="10"
-              />
-              {/* Progress circle */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="#6366f1"
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeDasharray={circleValues.circumference}
-                strokeDashoffset={circleValues.offset}
-                transform="rotate(-90 50 50)"
-              />
-              {/* Percentage text */}
-              <text
-                x="50"
-                y="55"
-                textAnchor="middle"
-                fontSize="20"
-                fontWeight="bold"
-                fill="#6366f1"
-              >
-                {`${percentage}%`}
-              </text>
-            </svg>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full border-8 border-gray-200"></div>
-            </div>
-          )}
-        </div>
-        <p className="text-sm text-gray-600 mt-2">Completion Rate</p>
-      </div>
-    </div>
-  );
-};
-
-export default Stats;
-</file>
-
-<file path="src/components/TaskList.tsx">
-"use client";
-
-import { TaskListProps } from "@/lib/types";
-import TaskItem from "./TaskItem";
-
-const TaskList: React.FC<TaskListProps> = ({
-  tasks,
-  onToggleCompletion,
-  onDeleteTask,
-  isCompletedList = false,
-  currentDate,
-}) => {
-  return (
-    <ul className="space-y-2 list-none p-0 m-0">
-      {tasks.map((task) => (
-        <TaskItem
-          key={task.id}
-          task={task}
-          onToggleCompletion={onToggleCompletion}
-          onDeleteTask={onDeleteTask}
-          isCompleted={task.completed}
-          currentDate={currentDate}
-        />
-      ))}
-    </ul>
-  );
-};
-
-export default TaskList;
-</file>
-
-<file path=".env.example">
-# Example environment variables
-# Copy this file to .env.local and fill in your values
-
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-
-# Add any future environment variables here
-# NEXT_PUBLIC_API_URL=
-# DATABASE_URL=
-</file>
-
-<file path=".gitignore">
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-</file>
-
-<file path="next.config.js">
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-  images: {
-    domains: ["lh3.googleusercontent.com"],
-  },
-};
-
-module.exports = nextConfig;
-</file>
-
-<file path="package.json">
-{
-  "name": "taskapp",
-  "version": "1.0.0",
-  "description": "Joytask: A to-do list app that celebrates task completion",
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "keywords": [
-    "todo",
-    "task",
-    "productivity"
-  ],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@radix-ui/react-checkbox": "^1.1.5",
-    "@radix-ui/react-dropdown-menu": "^2.1.7",
-    "@radix-ui/react-slot": "^1.2.0",
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
-    "@supabase/auth-ui-react": "^0.4.7",
-    "@supabase/auth-ui-shared": "^0.1.8",
-    "@supabase/supabase-js": "^2.49.1",
-    "@types/canvas-confetti": "^1.9.0",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
-    "autoprefixer": "^10.4.0",
-    "canvas-confetti": "^1.9.3",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "date-fns": "^2.30.0",
-    "framer-motion": "^12.6.5",
-    "lucide-react": "^0.487.0",
-    "next": "^14.0.0",
-    "postcss": "^8.4.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwind-merge": "^3.2.0",
-    "tailwindcss": "^3.3.0",
-    "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.0.0"
+    // Convert database format to app format
+    return data.map((task) => ({
+      id: task.id,
+      title: task.title,
+      completed: task.completed,
+      createdAt: new Date(task.created_at),
+      completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+      deadline: task.deadline ? new Date(task.deadline) : undefined,
+      date: task.date,
+      user_id: task.user_id,
+    }));
+  } catch (error) {
+    console.error("Error in getTasks:", error);
+    throw error;
   }
+};
+
+// Add a new task
+export const addTask = async (
+  userId: string,
+  title: string,
+  date: string,
+  deadline?: Date
+): Promise<Task> => {
+  try {
+    const newTask = {
+      title,
+      completed: false,
+      created_at: new Date().toISOString(),
+      date,
+      deadline: deadline?.toISOString() || null,
+      user_id: userId,
+    };
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert(newTask)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error adding task:", error);
+      throw error;
+    }
+
+    if (!data) {
+      throw new Error("No data returned from insert operation");
+    }
+
+    // Convert database format to app format
+    return {
+      id: data.id,
+      title: data.title,
+      completed: data.completed,
+      createdAt: new Date(data.created_at),
+      completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
+      deadline: data.deadline ? new Date(data.deadline) : undefined,
+      date: data.date,
+      user_id: data.user_id,
+    };
+  } catch (error) {
+    console.error("Error in addTask:", error);
+    throw error;
+  }
+};
+
+// Toggle task completion
+export const toggleTaskCompletion = async (
+  taskId: string,
+  completed: boolean
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        completed,
+        completed_at: completed ? new Date().toISOString() : null,
+      })
+      .eq("id", taskId);
+
+    if (error) {
+      console.error("Error toggling task completion:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error in toggleTaskCompletion:", error);
+    throw error;
+  }
+};
+
+// Delete a task
+export const deleteTask = async (taskId: string): Promise<void> => {
+  try {
+    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+
+    if (error) {
+      console.error("Error deleting task:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error in deleteTask:", error);
+    throw error;
+  }
+};
+
+// Migrate localStorage tasks to Supabase
+export const migrateLocalTasks = async (
+  userId: string,
+  localTasks: Task[]
+): Promise<boolean> => {
+  try {
+    // Format tasks for Supabase
+    const tasksToInsert = localTasks.map((task) => ({
+      title: task.title,
+      completed: task.completed,
+      created_at: task.createdAt.toISOString(),
+      completed_at: task.completedAt ? task.completedAt.toISOString() : null,
+      deadline: task.deadline ? task.deadline.toISOString() : null,
+      date: task.date,
+      user_id: userId,
+    }));
+
+    if (tasksToInsert.length === 0) return true;
+
+    const { error } = await supabase.from("tasks").insert(tasksToInsert);
+
+    if (!error) {
+      return true;
+    } else {
+      console.error("Error migrating tasks:", error);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error in migrateLocalTasks:", error);
+    return false;
+  }
+};
+</file>
+
+<file path="src/lib/types.ts">
+export interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: Date;
+  completedAt?: Date;
+  deadline?: Date;
+  date: string; // The date this task is associated with (YYYY-MM-DD format)
+  user_id?: string; // The ID of the user who owns this task
+}
+
+export interface User {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+}
+
+export interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
+}
+
+export interface StatsProps {
+  stats: {
+    completedToday: number;
+    totalCompleted: number;
+    totalActive: number;
+  };
+}
+
+export interface DayStats {
+  total: number;
+  completed: number;
+  pending: number;
+}
+
+export interface TaskFormProps {
+  onAddTask: (title: string, date: string, deadline?: Date) => void;
+  selectedDate: string;
+}
+
+export interface TaskListProps {
+  tasks: Task[];
+  onToggleCompletion: (id: string) => void;
+  onDeleteTask: (id: string) => void;
+  isCompletedList?: boolean;
+  currentDate?: string;
+}
+
+export interface TaskItemProps {
+  task: Task;
+  onToggleCompletion: (id: string) => void;
+  onDeleteTask: (id: string) => void;
+  isCompleted?: boolean;
+  currentDate?: string;
+}
+
+export interface DayDetailProps {
+  date: string;
+  onDateChange: (date: string) => void;
+}
+
+export interface CalendarDayProps {
+  date: string;
+  tasks: Task[];
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  onClick: () => void;
+}
+
+export interface CalendarProps {
+  tasks: Task[];
+  selectedMonth: Date;
+  onMonthChange: (month: Date) => void;
+  onDayClick: (date: string) => void;
+}
+
+export interface DaySummaryProps {
+  date: string;
+  tasks: Task[];
+  onViewDetails: () => void;
+}
+
+export interface NavigationProps {
+  currentView: "day" | "calendar";
+  onViewChange: (view: "day" | "calendar") => void;
 }
 </file>
 
@@ -3029,6 +2762,45 @@ module.exports = {
 };
 </file>
 
+<file path=".github/workflows/ci.yml">
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Lint
+        run: npm run lint
+</file>
+
 <file path="src/app/layout.tsx">
 import "./globals.css";
 import type { Metadata } from "next";
@@ -3104,6 +2876,600 @@ export default function RootLayout({
 }
 </file>
 
+<file path="src/components/Calendar.tsx">
+"use client";
+
+import { useState } from "react";
+import { CalendarProps, Task } from "@/lib/types";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isToday,
+  addMonths,
+  subMonths,
+  parseISO,
+  isSameDay,
+} from "date-fns";
+import CalendarDay from "./CalendarDay";
+import DaySummary from "./DaySummary";
+
+const Calendar: React.FC<CalendarProps> = ({
+  tasks,
+  selectedMonth,
+  onMonthChange,
+  onDayClick,
+}) => {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // Get days in the current month view
+  const monthStart = startOfMonth(selectedMonth);
+  const monthEnd = endOfMonth(selectedMonth);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  // Get the day of the week for the first day of the month (0-6, where 0 is Sunday)
+  const startDay = monthStart.getDay();
+
+  // Calculate days from previous month to display
+  const daysFromPrevMonth = Array.from({ length: startDay }, (_, i) => {
+    const day = new Date(monthStart);
+    day.setDate(day.getDate() - (startDay - i));
+    return day;
+  });
+
+  // Calculate days from next month to display (to fill a 6-row grid)
+  const totalDaysToShow = 42; // 6 rows of 7 days
+  const daysFromNextMonth = Array.from(
+    { length: totalDaysToShow - daysInMonth.length - daysFromPrevMonth.length },
+    (_, i) => {
+      const day = new Date(monthEnd);
+      day.setDate(day.getDate() + i + 1);
+      return day;
+    }
+  );
+
+  // Combine all days
+  const allDays = [...daysFromPrevMonth, ...daysInMonth, ...daysFromNextMonth];
+
+  // Navigate to previous month
+  const goToPreviousMonth = () => {
+    onMonthChange(subMonths(selectedMonth, 1));
+  };
+
+  // Navigate to next month
+  const goToNextMonth = () => {
+    onMonthChange(addMonths(selectedMonth, 1));
+  };
+
+  // Navigate to current month
+  const goToCurrentMonth = () => {
+    onMonthChange(new Date());
+  };
+
+  // Handle day click
+  const handleDayClick = (date: string) => {
+    setSelectedDate(date);
+  };
+
+  // Close the day summary modal
+  const closeDaySummary = () => {
+    setSelectedDate(null);
+  };
+
+  // View day details
+  const viewDayDetails = () => {
+    if (selectedDate) {
+      onDayClick(selectedDate);
+      setSelectedDate(null);
+    }
+  };
+
+  // Get tasks for a specific day
+  const getTasksForDay = (date: Date): Task[] => {
+    const dateString = format(date, "yyyy-MM-dd");
+    // Standardized filter: Use the 'date' field (YYYY-MM-DD string) directly.
+    return tasks.filter((task) => task.date === dateString);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={goToPreviousMonth}
+          className="p-2 rounded-full hover:bg-gray-100"
+          aria-label="Previous month"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">
+            {format(selectedMonth, "MMMM yyyy")}
+          </h2>
+          {!isSameMonth(selectedMonth, new Date()) && (
+            <button
+              onClick={goToCurrentMonth}
+              className="text-sm text-primary hover:underline"
+            >
+              Go to Current Month
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={goToNextMonth}
+          className="p-2 rounded-full hover:bg-gray-100"
+          aria-label="Next month"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
+        {/* Day headers */}
+        {[
+          { short: "S", long: "Sun" },
+          { short: "M", long: "Mon" },
+          { short: "T", long: "Tue" },
+          { short: "W", long: "Wed" },
+          { short: "T", long: "Thu" },
+          { short: "F", long: "Fri" },
+          { short: "S", long: "Sat" },
+        ].map((day) => (
+          <div
+            key={day.long}
+            className="bg-gray-100 p-2 text-center text-sm font-medium text-gray-700"
+          >
+            <span className="hidden sm:inline">{day.long}</span>
+            <span className="sm:hidden">{day.short}</span>
+          </div>
+        ))}
+
+        {/* Calendar days */}
+        {allDays.map((day) => {
+          const dateString = format(day, "yyyy-MM-dd");
+          const dayTasks = getTasksForDay(day);
+
+          return (
+            <CalendarDay
+              key={dateString}
+              date={dateString}
+              tasks={dayTasks}
+              isCurrentMonth={isSameMonth(day, selectedMonth)}
+              isToday={isToday(day)}
+              onClick={() => handleDayClick(dateString)}
+            />
+          );
+        })}
+      </div>
+
+      {/* Day summary modal */}
+      {selectedDate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto my-8 flex flex-col max-h-[90vh]">
+            <div className="sticky top-0 bg-white z-10 flex justify-end p-2">
+              <button
+                onClick={closeDaySummary}
+                className="text-gray-500 hover:text-gray-700 p-1"
+                aria-label="Close"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-grow">
+              <DaySummary
+                date={selectedDate}
+                tasks={tasks.filter((task) => {
+                  if (task.deadline) {
+                    // If the task has a deadline, check if it falls on this date
+                    try {
+                      return isSameDay(
+                        new Date(task.deadline),
+                        parseISO(selectedDate)
+                      );
+                    } catch (error) {
+                      console.error("Error comparing dates:", error);
+                      return false;
+                    }
+                  }
+
+                  // For backward compatibility, include tasks without deadlines that were created on this date
+                  return task.date === selectedDate;
+                })}
+                onViewDetails={viewDayDetails}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Calendar;
+</file>
+
+<file path="src/components/DayDetail.tsx">
+"use client";
+
+import { useState } from "react";
+import { Task } from "@/lib/types";
+import TaskForm from "./TaskForm";
+import TaskList from "./TaskList";
+import { format, addDays, subDays, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+
+interface DayDetailProps {
+  date: string;
+  tasks: Task[];
+  onDateChange: (date: string) => void;
+  onAddTask: (title: string, date: string, deadline?: Date) => void;
+  onToggleCompletion: (id: string) => void;
+  onDeleteTask: (id: string) => void;
+}
+
+const DayDetail: React.FC<DayDetailProps> = ({
+  date,
+  tasks,
+  onDateChange,
+  onAddTask,
+  onToggleCompletion,
+  onDeleteTask,
+}) => {
+  const [showTaskForm, setShowTaskForm] = useState(false);
+
+  // Filter tasks for the selected date
+  const dayTasks = tasks.filter((task) => {
+    try {
+      // Match task date with the selected date string 'yyyy-MM-dd'
+      return task.date === date;
+    } catch (error) {
+      console.error("Error filtering task by date:", error, task);
+      return false;
+    }
+  });
+
+  // Calculate stats (moved to main page, keeping filtering logic here)
+  const activeTasks = dayTasks.filter((task) => !task.completed);
+  const completedTasks = dayTasks.filter((task) => task.completed);
+
+  // Navigate to previous day
+  const goToPreviousDay = () => {
+    const newDate = format(subDays(parseISO(date), 1), "yyyy-MM-dd");
+    onDateChange(newDate);
+  };
+
+  // Navigate to next day
+  const goToNextDay = () => {
+    const newDate = format(addDays(parseISO(date), 1), "yyyy-MM-dd");
+    onDateChange(newDate);
+  };
+
+  // Format the date for display (Day Name and Full Date)
+  const displayDay = format(parseISO(date), "EEEE");
+  const displayDate = format(parseISO(date), "MMMM d, yyyy");
+
+  // Handle adding a task and closing the modal
+  const handleAddTask = (title: string, date: string, deadline?: Date) => {
+    onAddTask(title, date, deadline);
+    setShowTaskForm(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Date Navigation */}
+      <div className="flex items-center justify-center space-x-4 mb-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToPreviousDay}
+          aria-label="Previous day"
+        >
+          <ChevronLeft className="h-5 w-5 text-gray-600" />
+        </Button>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-700">{displayDay}</h2>
+          <p className="text-sm text-gray-500">{displayDate}</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToNextDay}
+          aria-label="Next day"
+        >
+          <ChevronRight className="h-5 w-5 text-gray-600" />
+        </Button>
+      </div>
+
+      {/* Active Tasks Section */}
+      <div className="active-tasks-section">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">Active Tasks</h3>
+          <Button onClick={() => setShowTaskForm(true)} size="sm">
+            <Plus className="mr-2 h-4 w-4" /> Add Task
+          </Button>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          {activeTasks.length > 0 ? (
+            <TaskList
+              tasks={activeTasks}
+              onToggleCompletion={onToggleCompletion}
+              onDeleteTask={onDeleteTask}
+              currentDate={date}
+            />
+          ) : (
+            <p className="text-center text-gray-500 py-4">
+              No active tasks for today. Add a new task to get started!
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Completed Tasks Section */}
+      <div className="completed-tasks-section">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Completed Tasks
+        </h3>
+        <div className="bg-white rounded-lg shadow p-4">
+          {completedTasks.length > 0 ? (
+            <TaskList
+              tasks={completedTasks}
+              onToggleCompletion={onToggleCompletion}
+              onDeleteTask={onDeleteTask}
+              isCompletedList={true}
+              currentDate={date}
+            />
+          ) : (
+            <p className="text-center text-gray-500 py-4">
+              No completed tasks for today
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Task Form Modal (Styling adjustments might be needed in TaskForm itself) */}
+      {showTaskForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Add New Task</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowTaskForm(false)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </Button>
+            </div>
+            <div className="p-4">
+              <TaskForm onAddTask={handleAddTask} selectedDate={date} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DayDetail;
+</file>
+
+<file path="src/components/Navigation.tsx">
+"use client";
+
+import { NavigationProps } from "@/lib/types";
+import LoginButton from "./auth/LoginButton";
+import UserProfile from "./auth/UserProfile";
+import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const Navigation: React.FC<NavigationProps> = ({
+  currentView,
+  onViewChange,
+}) => {
+  const { user, signOut } = useAuth();
+
+  return (
+    <nav className="bg-white shadow-sm mb-8 rounded-lg">
+      <div className="flex justify-between items-center p-2">
+        <div className="flex space-x-1 p-1">
+          <button
+            onClick={() => onViewChange("day")}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              currentView === "day"
+                ? "bg-primary text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            Day View
+          </button>
+          <button
+            onClick={() => onViewChange("calendar")}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              currentView === "calendar"
+                ? "bg-primary text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            Calendar
+          </button>
+        </div>
+        <div className="flex items-center space-x-4">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="focus:outline-none rounded-full p-1 hover:bg-gray-100 transition-colors"
+                  aria-label="User menu"
+                >
+                  <UserProfile />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="text-red-500 cursor-pointer"
+                >
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <LoginButton />
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export default Navigation;
+</file>
+
+<file path="src/components/TaskList.tsx">
+"use client";
+
+import { TaskListProps } from "@/lib/types";
+import TaskItem from "./TaskItem";
+
+const TaskList: React.FC<TaskListProps> = ({
+  tasks,
+  onToggleCompletion,
+  onDeleteTask,
+  currentDate,
+}) => {
+  return (
+    <ul className="space-y-2 list-none p-0 m-0">
+      {tasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          onToggleCompletion={onToggleCompletion}
+          onDeleteTask={onDeleteTask}
+          isCompleted={task.completed}
+          currentDate={currentDate}
+        />
+      ))}
+    </ul>
+  );
+};
+
+export default TaskList;
+</file>
+
+<file path="package.json">
+{
+  "name": "taskapp",
+  "version": "1.0.0",
+  "description": "Joytask: A to-do list app that celebrates task completion",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [
+    "todo",
+    "task",
+    "productivity"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@radix-ui/react-checkbox": "^1.1.5",
+    "@radix-ui/react-dropdown-menu": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.0",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/auth-ui-react": "^0.4.7",
+    "@supabase/auth-ui-shared": "^0.1.8",
+    "@supabase/supabase-js": "^2.49.1",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "autoprefixer": "^10.4.0",
+    "canvas-confetti": "^1.9.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^2.30.0",
+    "framer-motion": "^12.6.5",
+    "lucide-react": "^0.487.0",
+    "next": "^14.0.0",
+    "postcss": "^8.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^3.2.0",
+    "tailwindcss": "^3.3.0",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.3.0"
+  }
+}
+</file>
+
 <file path="src/app/page.tsx">
 "use client";
 
@@ -3114,7 +3480,6 @@ import Navigation from "@/components/Navigation";
 import DayDetail from "@/components/DayDetail";
 import Calendar from "@/components/Calendar";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
 import {
   getTasks,
   addTask as addTaskToDb,
@@ -3126,6 +3491,19 @@ import { BarChart } from "@/components/ui/BarChart";
 import { CheckCircle } from "@/components/ui/CheckCircle";
 import { Circle } from "@/components/ui/Circle";
 import LandingPage from "@/components/LandingPage";
+import { useToast } from "@/context/ToastContext";
+
+// Define a type for raw task data from localStorage
+interface RawTaskData {
+  id: string;
+  userId?: string;
+  title: string;
+  completed: boolean;
+  createdAt: string; // Expect string initially
+  completedAt?: string; // Expect string initially
+  deadline?: string; // Expect string initially
+  date?: string; // Expect string initially
+}
 
 // TODO: Future optimizations:
 // 1. Consider using a more persistent storage solution like IndexedDB for larger datasets
@@ -3153,6 +3531,7 @@ export default function Home() {
 
   // Get auth context
   const { user, isLoading: isAuthLoading } = useAuth();
+  const { showToast } = useToast();
 
   // Initialize migration flag from localStorage
   useEffect(() => {
@@ -3187,15 +3566,8 @@ export default function Home() {
             console.log(
               "Detected new user login with existing tasks. Clearing tasks for clean slate."
             );
-            for (const task of userTasks) {
-              try {
-                await deleteTaskFromDb(task.id);
-              } catch (error) {
-                console.error("Error deleting existing task:", error);
-              }
-            }
-            setTasks([]);
-            return;
+            // Risky deletion logic removed as per code review plan
+            // The check is kept for debugging purposes only
           }
 
           setTasks(userTasks);
@@ -3206,27 +3578,46 @@ export default function Home() {
               const localTasksJson = localStorage.getItem("tasks");
               if (localTasksJson) {
                 const localTasks = JSON.parse(localTasksJson);
-                const formattedLocalTasks = localTasks.map((task: any) => ({
-                  ...task,
-                  date:
-                    task.date || format(new Date(task.createdAt), "yyyy-MM-dd"),
-                  createdAt: new Date(task.createdAt),
-                  completedAt: task.completedAt
-                    ? new Date(task.completedAt)
-                    : undefined,
-                  deadline: task.deadline ? new Date(task.deadline) : undefined,
-                }));
+                const formattedLocalTasks = localTasks.map(
+                  (task: RawTaskData) => ({
+                    ...task,
+                    date:
+                      task.date ||
+                      format(new Date(task.createdAt), "yyyy-MM-dd"),
+                    createdAt: new Date(task.createdAt),
+                    completedAt: task.completedAt
+                      ? new Date(task.completedAt)
+                      : undefined,
+                    deadline: task.deadline
+                      ? new Date(task.deadline)
+                      : undefined,
+                  })
+                );
 
-                await migrateLocalTasks(user.id, formattedLocalTasks);
-                localStorage.removeItem("tasks");
-                setHasMigratedTasks(true);
-                localStorage.setItem(`migrated_${user.id}`, "true");
+                const migrationSuccess = await migrateLocalTasks(
+                  user.id,
+                  formattedLocalTasks
+                );
+                if (migrationSuccess) {
+                  localStorage.removeItem("tasks");
+                  setHasMigratedTasks(true);
+                  localStorage.setItem(`migrated_${user.id}`, "true");
 
-                const updatedTasks = await getTasks(user.id);
-                setTasks(updatedTasks);
+                  const updatedTasks = await getTasks(user.id);
+                  setTasks(updatedTasks);
+                } else {
+                  showToast(
+                    "Task migration from local storage failed. Please reload or contact support if issue persists.",
+                    "error"
+                  );
+                }
               }
             } catch (migrationError) {
               console.error("Error during task migration:", migrationError);
+              showToast(
+                "Task migration from local storage failed. Please reload or contact support if issue persists.",
+                "error"
+              );
             }
           } else if (!hasMigratedTasks) {
             setHasMigratedTasks(true);
@@ -3240,7 +3631,7 @@ export default function Home() {
             if (savedTasks) {
               const parsedTasks = JSON.parse(savedTasks);
               setTasks(
-                parsedTasks.map((task: any) => ({
+                parsedTasks.map((task: RawTaskData) => ({
                   ...task,
                   date:
                     task.date || format(new Date(task.createdAt), "yyyy-MM-dd"),
@@ -3271,7 +3662,7 @@ export default function Home() {
     if (!isAuthLoading) {
       loadTasks();
     }
-  }, [user, isAuthLoading, hasMigratedTasks]);
+  }, [user, isAuthLoading, hasMigratedTasks, showToast]);
 
   // Save tasks to localStorage when they change (only if not logged in)
   useEffect(() => {
@@ -3280,9 +3671,11 @@ export default function Home() {
         localStorage.setItem("tasks", JSON.stringify(tasks));
       } catch (error) {
         console.error("Error saving tasks to localStorage:", error);
+        // Optionally show a toast message here if saving fails
+        // showToast("Failed to save tasks locally.", "error"); // Uncomment if needed
       }
     }
-  }, [tasks, isLoaded, user]);
+  }, [tasks, isLoaded, user, showToast]);
 
   // Add a new task
   const addTask = async (title: string, date: string, deadline?: Date) => {
@@ -3459,155 +3852,6 @@ export default function Home() {
 }
 </file>
 
-<file path="src/components/TaskForm.tsx">
-"use client";
-
-import { useState } from "react";
-import { TaskFormProps } from "@/lib/types";
-import { format, parseISO, setHours, setMinutes, setSeconds } from "date-fns";
-
-const TaskForm: React.FC<TaskFormProps> = ({ onAddTask, selectedDate }) => {
-  const [title, setTitle] = useState("");
-  const [deadlineDate, setDeadlineDate] = useState("");
-  const [deadlineTime, setDeadlineTime] = useState("");
-  const [showDeadline, setShowDeadline] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (title.trim()) {
-      let finalDeadline;
-      let taskDate = selectedDate; // Default to the selected date
-
-      if (deadlineDate) {
-        try {
-          // Create a date object from the deadline date
-          const dateObj = new Date(deadlineDate);
-
-          // If time is provided, set it; otherwise, set to end of day (23:59:59)
-          if (deadlineTime) {
-            const [hours, minutes] = deadlineTime.split(":").map(Number);
-            finalDeadline = setHours(setMinutes(dateObj, minutes), hours);
-          } else {
-            finalDeadline = setHours(
-              setMinutes(setSeconds(dateObj, 59), 59),
-              23
-            );
-          }
-
-          // Ensure the date is valid
-          if (isNaN(finalDeadline.getTime())) {
-            console.error("Invalid date created:", finalDeadline);
-            finalDeadline = undefined;
-          } else {
-            // Use the deadline date as the task date (YYYY-MM-DD format)
-            taskDate = format(finalDeadline, "yyyy-MM-dd");
-          }
-        } catch (error) {
-          console.error("Error creating deadline date:", error);
-          finalDeadline = undefined;
-        }
-      }
-
-      onAddTask(title.trim(), taskDate, finalDeadline);
-
-      // Reset form
-      setTitle("");
-      setDeadlineDate("");
-      setDeadlineTime("");
-      setShowDeadline(false);
-    }
-  };
-
-  // Format the selected date for display
-  const formattedDate = format(parseISO(selectedDate), "EEEE, MMMM d");
-
-  return (
-    <div>
-      <p className="text-sm text-gray-600 mb-4">for {formattedDate}</p>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="What needs to be done?"
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            required
-            autoFocus
-          />
-        </div>
-
-        <div className="flex items-center">
-          <button
-            type="button"
-            onClick={() => setShowDeadline(!showDeadline)}
-            className="text-sm text-primary flex items-center"
-          >
-            {showDeadline ? "Hide deadline" : "Add deadline"}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 ml-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {showDeadline && (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Deadline Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={deadlineDate}
-                onChange={(e) => setDeadlineDate(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Time (optional)
-              </label>
-              <input
-                type="time"
-                value={deadlineTime}
-                onChange={(e) => setDeadlineTime(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                If no time is selected, deadline will be set to end of day
-                (11:59 PM)
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div>
-          <button type="submit" className="btn btn-primary w-full">
-            Add Task
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-};
-
-export default TaskForm;
-</file>
-
 <file path="src/components/TaskItem.tsx">
 "use client";
 
@@ -3623,7 +3867,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
   task,
   onToggleCompletion,
   onDeleteTask,
-  isCompleted = false,
 }) => {
   const [showCelebration, setShowCelebration] = useState(false);
   const { showToast } = useToast();
@@ -3693,101 +3936,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
 };
 
 export default TaskItem;
-</file>
-
-<file path="src/lib/types.ts">
-export interface Task {
-  id: string;
-  title: string;
-  completed: boolean;
-  createdAt: Date;
-  completedAt?: Date;
-  deadline?: Date;
-  date: string; // The date this task is associated with (YYYY-MM-DD format)
-  user_id?: string; // The ID of the user who owns this task
-}
-
-export interface User {
-  id: string;
-  email?: string;
-  user_metadata?: {
-    full_name?: string;
-    avatar_url?: string;
-  };
-}
-
-export interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  signIn: () => Promise<void>;
-  signOut: () => Promise<void>;
-}
-
-export interface StatsProps {
-  stats: {
-    completedToday: number;
-    totalCompleted: number;
-    totalActive: number;
-  };
-}
-
-export interface DayStats {
-  total: number;
-  completed: number;
-  pending: number;
-}
-
-export interface TaskFormProps {
-  onAddTask: (title: string, date: string, deadline?: Date) => void;
-  selectedDate: string;
-}
-
-export interface TaskListProps {
-  tasks: Task[];
-  onToggleCompletion: (id: string) => void;
-  onDeleteTask: (id: string) => void;
-  isCompletedList?: boolean;
-  currentDate?: string;
-}
-
-export interface TaskItemProps {
-  task: Task;
-  onToggleCompletion: (id: string) => void;
-  onDeleteTask: (id: string) => void;
-  isCompleted?: boolean;
-  currentDate?: string;
-}
-
-export interface DayDetailProps {
-  date: string;
-  onDateChange: (date: string) => void;
-}
-
-export interface CalendarDayProps {
-  date: string;
-  tasks: Task[];
-  isCurrentMonth: boolean;
-  isToday: boolean;
-  onClick: () => void;
-}
-
-export interface CalendarProps {
-  tasks: Task[];
-  selectedMonth: Date;
-  onMonthChange: (month: Date) => void;
-  onDayClick: (date: string) => void;
-}
-
-export interface DaySummaryProps {
-  date: string;
-  tasks: Task[];
-  onViewDetails: () => void;
-}
-
-export interface NavigationProps {
-  currentView: "day" | "calendar";
-  onViewChange: (view: "day" | "calendar") => void;
-}
 </file>
 
 </files>

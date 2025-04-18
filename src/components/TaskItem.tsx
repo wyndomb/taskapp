@@ -19,8 +19,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const handleTaskCompletion = () => {
     // Only show celebration when marking a task as complete, not when unmarking
     if (!task.completed) {
-      setShowCelebration(true);
-      showToast(`Task "${task.title}" completed! 🎉`, "success");
+      // setShowCelebration(true);
+      // showToast(`Task "${task.title}" completed! 🎉`, "success");
     }
     onToggleCompletion(task.id);
   };
